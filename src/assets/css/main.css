@@ -2493,6 +2493,11 @@ a:hover {
     padding: var(--space-3) 0;
   }
   
+  /* 修复 site-header container 在移动端的边距，使其与main-article对齐 */
+  .site-header .container {
+    padding: 0 calc(var(--space-2) + var(--space-4));
+  }
+  
   .site-title {
     font-size: var(--text-lg);
   }
