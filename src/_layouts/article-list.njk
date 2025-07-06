@@ -104,16 +104,38 @@ hideSidebar: true
             </a>
           </div>
           
-          <div class="post-tags">
-            {% if post.data.tags and post.data.tags.length > 0 %}
-              {% for tag in post.data.tags %}
-                {% if listType == "tag" and tag == itemName %}
-                  <span class="post-tag current-tag">{{ tag }}</span>
-                {% else %}
-                  <a href="/tags/{{ tag | slug }}/" class="post-tag">{{ tag }}</a>
+          <div class="post-meta">
+            {% if post.data.categories or post.data.category %}
+              <div class="post-categories">
+                {% if post.data.categories %}
+                  {% for category in post.data.categories %}
+                    {% if listType == "category" and category == itemName %}
+                      <span class="post-category current-category">{{ category }}</span>
+                    {% else %}
+                      <a href="/categories/{{ category | slug }}/" class="post-category">{{ category }}</a>
+                    {% endif %}
+                  {% endfor %}
+                {% elif post.data.category %}
+                  {% if listType == "category" and post.data.category == itemName %}
+                    <span class="post-category current-category">{{ post.data.category }}</span>
+                  {% else %}
+                    <a href="/categories/{{ post.data.category | slug }}/" class="post-category">{{ post.data.category }}</a>
+                  {% endif %}
                 {% endif %}
-              {% endfor %}
+              </div>
             {% endif %}
+            
+            <div class="post-tags">
+              {% if post.data.tags and post.data.tags.length > 0 %}
+                {% for tag in post.data.tags %}
+                  {% if listType == "tag" and tag == itemName %}
+                    <span class="post-tag current-tag">{{ tag }}</span>
+                  {% else %}
+                    <a href="/tags/{{ tag | slug }}/" class="post-tag">{{ tag }}</a>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </div>
           </div>
         </article>
       {% endfor %}

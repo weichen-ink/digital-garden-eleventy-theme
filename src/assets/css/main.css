@@ -818,13 +818,50 @@ body {
   color: var(--color-primary);
 }
 
+.post-meta {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  align-items: center;
+  margin-left: auto;
+  justify-content: flex-end;
+}
+
+.post-categories {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.post-category {
+  color: var(--color-gray-600);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-normal);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.post-category::before {
+  content: "📂";
+  margin-right: 2px;
+  color: var(--color-gray-400);
+}
+
+.post-category:hover {
+  color: var(--color-primary);
+}
+
+.post-category.current-category {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
+}
+
 .post-tags {
   display: flex;
   gap: var(--space-2);
   flex-wrap: wrap;
   align-items: center;
-  margin-left: auto;
-  justify-content: flex-end;
 }
 
 .post-tag {
@@ -2463,6 +2500,11 @@ a:hover {
     gap: var(--space-2);
   }
   
+  .post-meta {
+    margin-left: 0;
+    justify-content: flex-start;
+  }
+  
   .post-tags {
     margin-left: 0;
     justify-content: flex-start;
@@ -2511,13 +2553,22 @@ a:hover {
   }
   
   .note-header-main {
-    flex-direction: column;
+    flex-direction: row;
+    justify-content: space-between;
     align-items: flex-start;
     gap: var(--space-2);
+    flex-wrap: nowrap;
   }
   
   .note-title {
+    flex: 1;
+    min-width: 0;
     font-size: var(--text-lg);
+  }
+  
+  .back-button {
+    flex-shrink: 0;
+    font-size: var(--text-xs);
   }
   
   .post-date {
@@ -3135,6 +3186,15 @@ a:hover {
   font-size: var(--text-sm);
 }
 
+/* 文章列表页面的 note-meta 特殊样式 */
+.note-header .note-meta {
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: none;
+  padding-bottom: 0;
+  flex-wrap: nowrap;
+}
+
 .sort-group-time,
 .sort-group-order {
   display: flex;
@@ -3209,19 +3269,34 @@ a:hover {
     margin: 0 var(--space-1);
   }
   
-  .note-meta {
-    justify-content: flex-start;
-    flex-wrap: wrap;
+  .note-header .note-meta {
+    justify-content: space-between;
+    flex-wrap: nowrap;
     gap: var(--space-2);
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 600px) {
+  .note-header .note-meta {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  
+  .note-count {
+    flex-shrink: 0;
+    white-space: nowrap;
+    min-width: auto;
+  }
+  
   .sort-controls {
-    margin-left: 0;
-    margin-top: var(--space-1);
-    flex-basis: 100%;
-    justify-content: flex-end;
+    flex-shrink: 1;
+    min-width: 0;
+    gap: 1px;
+  }
+  
+  .sort-btn {
+    font-size: var(--text-xs);
+    padding: 1px 2px;
   }
 }
 
