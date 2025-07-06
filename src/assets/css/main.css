@@ -605,7 +605,7 @@ body {
 .note-meta {
   display: flex;
   flex-direction: row;
-  align-items: center;
+  align-items: flex-start;
   justify-content: flex-start;
   gap: var(--space-4);
   color: var(--color-text-muted);
@@ -613,6 +613,14 @@ body {
   flex-wrap: wrap;
   border-bottom: 1px solid var(--color-gray-200);
   padding-bottom: var(--space-4);
+}
+
+.note-created-date,
+.note-updated-date {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-normal);
+  white-space: nowrap;
 }
 
 .note-meta *,

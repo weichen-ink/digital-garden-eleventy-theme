@@ -16,7 +16,7 @@ layout: base.njk
       {% set untaggedCount = (collections.content | selectattr("data.tags", "undefined")).length %}
       <span class="note-count">共 {{ (collections.tagList.length + (1 if untaggedCount > 0 else 0)) }} 个标签</span>
     {% else %}
-      {% set uncategorizedCount = (collections.content | rejectattr("data.category")).length %}
+      {% set uncategorizedCount = (collections.content | selectattr("data", "defined") | selectattr("data.category", "undefined") | selectattr("data.categories", "undefined")).length %}
       <span class="note-count">共 {{ (collections.categoryList.length + (1 if uncategorizedCount > 0 else 0)) }} 个分类</span>
     {% endif %}
   </div>
@@ -96,7 +96,7 @@ layout: base.njk
       {% set uncategorizedPosts = [] %}
       {% for item in collections.content %}
         {% set fileName = item.inputPath.split('/').pop() %}
-        {% if not item.data.category and fileName != "_index.md" %}
+        {% if not item.data.category and not item.data.categories and fileName != "_index.md" %}
           {% set uncategorizedPosts = uncategorizedPosts.concat([item]) %}
         {% endif %}
       {% endfor %}

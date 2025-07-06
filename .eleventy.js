@@ -901,11 +901,18 @@ module.exports = function(eleventyConfig) {
     const tagSet = new Set();
     
     collectionApi.getAll().forEach(item => {
-      if (item.data && item.data.tags) {
-        const tags = Array.isArray(item.data.tags) ? item.data.tags : [item.data.tags];
-        tags.filter(tag => tag && typeof tag === 'string').forEach(tag => {
-          tagSet.add(tag.trim());
-        });
+      if (item.data) {
+        // 支持单数 tag 字段
+        if (item.data.tag && typeof item.data.tag === 'string') {
+          tagSet.add(item.data.tag.trim());
+        }
+        // 支持复数 tags 字段
+        if (item.data.tags) {
+          const tags = Array.isArray(item.data.tags) ? item.data.tags : [item.data.tags];
+          tags.filter(tag => tag && typeof tag === 'string').forEach(tag => {
+            tagSet.add(tag.trim());
+          });
+        }
       }
     });
     
@@ -919,16 +926,26 @@ module.exports = function(eleventyConfig) {
     collectionApi.getAll().forEach(item => {
       // 只处理内容文章，排除_index.md文件
       if (item.inputPath && item.inputPath.includes(`/${inputDir}/`) && 
-          item.inputPath.endsWith('.md') && item.data && item.data.tags) {
+          item.inputPath.endsWith('.md') && item.data && 
+          (item.data.tag || item.data.tags)) {
         
         const fileName = item.inputPath.split('/').pop();
         if (fileName === '_index.md') {
           return; // 跳过所有_index.md文件
         }
         
-        const tags = Array.isArray(item.data.tags) ? item.data.tags : [item.data.tags];
-        tags.filter(tag => tag && typeof tag === 'string').forEach(tag => {
-          const tagKey = tag.trim();
+        // 获取所有标签
+        let tags = [];
+        if (item.data.tag && typeof item.data.tag === 'string') {
+          tags.push(item.data.tag.trim());
+        }
+        if (item.data.tags) {
+          const itemTags = Array.isArray(item.data.tags) ? item.data.tags : [item.data.tags];
+          tags = tags.concat(itemTags.filter(tag => tag && typeof tag === 'string').map(tag => tag.trim()));
+        }
+        
+        // 将文章添加到每个标签中
+        tags.forEach(tagKey => {
           if (!tagMap[tagKey]) {
             tagMap[tagKey] = [];
           }
@@ -954,8 +971,18 @@ module.exports = function(eleventyConfig) {
     const categorySet = new Set();
     
     collectionApi.getAll().forEach(item => {
-      if (item.data && item.data.category && typeof item.data.category === 'string') {
-        categorySet.add(item.data.category.trim());
+      if (item.data) {
+        // 支持单数 category 字段
+        if (item.data.category && typeof item.data.category === 'string') {
+          categorySet.add(item.data.category.trim());
+        }
+        // 支持复数 categories 字段
+        if (item.data.categories) {
+          const categories = Array.isArray(item.data.categories) ? item.data.categories : [item.data.categories];
+          categories.filter(cat => cat && typeof cat === 'string').forEach(cat => {
+            categorySet.add(cat.trim());
+          });
+        }
       }
     });
     
@@ -969,18 +996,31 @@ module.exports = function(eleventyConfig) {
     collectionApi.getAll().forEach(item => {
       // 只处理内容文章，排除_index.md文件
       if (item.inputPath && item.inputPath.includes(`/${inputDir}/`) && 
-          item.inputPath.endsWith('.md') && item.data && item.data.category) {
+          item.inputPath.endsWith('.md') && item.data && 
+          (item.data.category || item.data.categories)) {
         
         const fileName = item.inputPath.split('/').pop();
         if (fileName === '_index.md') {
           return; // 跳过所有_index.md文件
         }
         
-        const categoryKey = item.data.category.trim();
-        if (!categoryMap[categoryKey]) {
-          categoryMap[categoryKey] = [];
+        // 获取所有分类
+        let categories = [];
+        if (item.data.category && typeof item.data.category === 'string') {
+          categories.push(item.data.category.trim());
         }
-        categoryMap[categoryKey].push(item);
+        if (item.data.categories) {
+          const cats = Array.isArray(item.data.categories) ? item.data.categories : [item.data.categories];
+          categories = categories.concat(cats.filter(cat => cat && typeof cat === 'string').map(cat => cat.trim()));
+        }
+        
+        // 将文章添加到每个分类中
+        categories.forEach(categoryKey => {
+          if (!categoryMap[categoryKey]) {
+            categoryMap[categoryKey] = [];
+          }
+          categoryMap[categoryKey].push(item);
+        });
       }
     });
     

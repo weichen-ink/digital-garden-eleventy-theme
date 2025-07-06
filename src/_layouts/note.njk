@@ -23,20 +23,43 @@ layout: base.njk
     
     <div class="note-meta">
       {% set articleObj = { data: { updated: updated, created: created, date: date }, inputPath: page.inputPath } %}
-      <time class="note-date">
-        更新于 {{ articleObj | getUpdatedDate | date("YYYY年MM月DD日") }}
-      </time>
+      {% set createdDate = articleObj | getCreatedDate %}
+      {% set updatedDate = articleObj | getUpdatedDate %}
       
-      {% if category %}
+      <time class="note-created-date">
+        发布于: {{ createdDate | date("YYYY-MM-DD") }}
+      </time>
+      {% if createdDate != updatedDate %}
+      <time class="note-updated-date">
+        更新于: {{ updatedDate | date("YYYY-MM-DD") }}
+      </time>
+      {% endif %}
+      
+      {% if category or categories %}
       <span class="note-category">
-        📂 <a href="/categories/{{ category | slug }}/">{{ category }}</a>
+        📂 
+        {% set categoryList = categories or [category] %}
+        {% if categoryList.length %}
+          {% for cat in categoryList %}
+            <a href="/categories/{{ cat | slug }}/">{{ cat }}</a>{% if not loop.last %}, {% endif %}
+          {% endfor %}
+        {% else %}
+          <a href="/categories/{{ categoryList | slug }}/">{{ categoryList }}</a>
+        {% endif %}
       </span>
       {% endif %}
       
-      {% if tags and tags.length > 0 %}
+      {% if tag or (tags and tags.length > 0) %}
       <div class="note-tags">
-        {% for tag in tags %}
-          <a href="/tags/{{ tag | slug }}/" class="note-tag">#{{ tag }}</a>
+        {% set allTags = [] %}
+        {% if tag %}
+          {% set allTags = allTags.concat([tag]) %}
+        {% endif %}
+        {% if tags and tags.length > 0 %}
+          {% set allTags = allTags.concat(tags) %}
+        {% endif %}
+        {% for tagItem in allTags %}
+          <a href="/tags/{{ tagItem | slug }}/" class="note-tag">#{{ tagItem }}</a>
         {% endfor %}
       </div>
       {% endif %}
