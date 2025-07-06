@@ -10,11 +10,8 @@
     "debug": "npx @11ty/eleventy --serve --quiet",
     "clean": "rm -rf _site",
     "preview": "npm run build && npx serve _site",
-    "theme:dev": "git switch theme-dev",
-    "theme:merge": "git switch main && git merge theme-dev",
-    "theme:push": "git switch theme-dev && git fetch upstream && git push --force-with-lease upstream HEAD:main && git push origin theme-dev",
-    "theme:pull": "git switch theme-dev && git pull upstream main",
-    "theme:deploy": "npm run theme:push && npm run theme:merge"
+    "theme:setup": "git remote add upstream https://github.com/weichen-ink/digital-garden-eleventy-theme.git",
+    "theme:pull": "git fetch upstream && git merge upstream/main"
   },
   "keywords": [
     "eleventy",
