@@ -11,7 +11,7 @@ class TOCPlugin extends Plugin {
 
   getDefaultConfig() {
     return {
-      selectors: '.note-content h1, .note-content h2, .note-content h3, .note-content h4, .home-content h2',
+      selectors: '.note-content h1, .note-content h2, .note-content h3, .note-content h4, .note-content h5, .note-content h6, .home-content h1, .home-content h2, .home-content h3, .home-content h4, .home-content h5, .home-content h6',
       container: '.table-of-contents',
       scrollSpyMargin: '-20% 0px -60% 0px'
     };

@@ -500,20 +500,35 @@ module.exports = function(eleventyConfig) {
     return headings;
   });
   
-  // 检查内容是否有标题 - 只检查文章内容区域的标题
+  // 检查内容是否有标题 - 检查文章内容区域的标题
   eleventyConfig.addFilter("hasHeadings", (content) => {
     if (!content) return false;
     
-    // 只检查markdown格式的标题 (h2-h6, 排除h1作为页面主标题)
-    // 与TOC插件的逻辑保持一致
-    const markdownHeadingRegex = /^#{2,6}\s+.+$/gm;
-    
+    // 检查markdown格式的标题 (h1-h6, 支持所有级别)
+    const markdownHeadingRegex = /^#{1,6}\s+.+$/gm;
     const hasMarkdownHeadings = markdownHeadingRegex.test(content);
     
-    // 验证是否真的有实际的标题内容（不是空的或只有空白字符）
     if (hasMarkdownHeadings) {
       const matches = content.match(markdownHeadingRegex);
       return matches && matches.some(match => match.replace(/^#+\s*/, '').trim().length > 0);
+    }
+    
+    // 检查HTML格式的标题 (h1-h6)
+    const htmlHeadingRegex = /<h[1-6][^>]*>.*?<\/h[1-6]>/gi;
+    const hasHtmlHeadings = htmlHeadingRegex.test(content);
+    
+    if (hasHtmlHeadings) {
+      const matches = content.match(htmlHeadingRegex);
+      // 过滤掉页面主标题和导航标题
+      const validHeadings = matches.filter(match => {
+        const titleText = match.replace(/<[^>]*>/g, '').trim();
+        return titleText && 
+               !match.includes('class="note-title"') &&
+               !match.includes('class="site-title"') &&
+               !titleText.includes('📋 目录') && 
+               !titleText.includes('🔗 反向链接');
+      });
+      return validHeadings.length > 0;
     }
     
     return false;
