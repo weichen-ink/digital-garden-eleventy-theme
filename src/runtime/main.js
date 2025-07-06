@@ -11,6 +11,7 @@ import { TOCPlugin } from './plugins/TOCPlugin.js';
 import { LazyLoadPlugin } from './plugins/LazyLoadPlugin.js';
 import { UIPlugin } from './plugins/UIPlugin.js';
 import { ShikiPlugin } from './plugins/ShikiPlugin.js';
+import ArticleSortPlugin from './plugins/ArticleSortPlugin.js';
 
 // 应用配置
 const appConfig = {

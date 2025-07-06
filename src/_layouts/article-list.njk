@@ -67,6 +67,16 @@ hideSidebar: true
   </div>
   <div class="note-meta">
     <span class="note-count">{{ posts.length }} 篇文章</span>
+    <div class="sort-controls">
+      <div class="sort-group-time">
+        <button class="sort-btn" data-sort="created">[发布时间]</button>
+        <button class="sort-btn active" data-sort="updated">[更新时间]</button>
+      </div>
+      <div class="sort-group-order">
+        <button class="sort-btn active" data-order="desc">[↓最新]</button>
+        <button class="sort-btn" data-order="asc">[↑最旧]</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -81,7 +91,9 @@ hideSidebar: true
   {% if posts and posts.length > 0 %}
     <div class="posts-list">
       {% for post in posts %}
-        <article class="post-item">
+        <article class="post-item" 
+                 data-updated="{{ post | getUpdatedDate }}"
+                 data-created="{{ post | getCreatedDate }}">
           <time class="post-date">
             {{ post | getUpdatedDate | formatDate }}
           </time>

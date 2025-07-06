@@ -3125,3 +3125,103 @@ a:hover {
   }
 }
 
+/* ==================== 文章排序控件 ==================== */
+.sort-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-left: auto;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.sort-group-time,
+.sort-group-order {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.sort-label {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  margin-right: var(--space-1);
+}
+
+.sort-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-normal);
+  transition: all 0.15s ease;
+  text-decoration: none;
+  border-radius: var(--radius);
+  padding: 2px 4px;
+}
+
+.sort-btn:hover {
+  color: var(--color-text-secondary);
+  background-color: var(--color-bg-light);
+}
+
+.sort-btn.active {
+  color: var(--color-primary);
+  background-color: transparent;
+  font-weight: var(--font-weight-medium);
+}
+
+.sort-separator {
+  color: var(--color-text-light);
+  margin: 0 var(--space-1);
+  font-size: var(--text-sm);
+}
+
+.sort-arrow {
+  color: var(--color-text-light);
+  margin: 0 var(--space-2);
+  font-size: var(--text-sm);
+  transform: rotate(90deg);
+  display: inline-block;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .sort-controls {
+    margin-left: auto;
+    gap: 2px;
+  }
+  
+  .sort-label,
+  .sort-btn,
+  .sort-separator,
+  .sort-arrow {
+    font-size: var(--text-xs);
+  }
+  
+  .sort-separator {
+    margin: 0 var(--space-1);
+  }
+  
+  .sort-arrow {
+    margin: 0 var(--space-1);
+  }
+  
+  .note-meta {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+}
+
+@media (max-width: 480px) {
+  .sort-controls {
+    margin-left: 0;
+    margin-top: var(--space-1);
+    flex-basis: 100%;
+    justify-content: flex-end;
+  }
+}
+
