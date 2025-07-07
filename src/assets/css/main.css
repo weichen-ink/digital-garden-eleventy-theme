@@ -2292,6 +2292,15 @@ a:hover {
   margin-top: var(--space-1);
 }
 
+/* Footer 响应式样式 */
+@media (max-width: 480px) {
+  .footer-credits {
+    flex-wrap: wrap;
+    justify-content: center;
+    text-align: center;
+  }
+}
+
 /* 主题版权信息样式 */
 .theme-credits {
   display: flex;
@@ -3187,12 +3196,18 @@ a:hover {
 }
 
 /* 文章列表页面的 note-meta 特殊样式 */
-.note-header .note-meta {
+.article-list .note-header .note-meta {
   align-items: center;
   justify-content: space-between;
   border-bottom: none;
   padding-bottom: 0;
   flex-wrap: nowrap;
+}
+
+/* 文章页面的 note-meta 优化 */
+.article-content .note-meta {
+  padding-bottom: var(--space-2);
+  gap: var(--space-2);
 }
 
 .sort-group-time,
@@ -3269,29 +3284,31 @@ a:hover {
     margin: 0 var(--space-1);
   }
   
-  .note-header .note-meta {
+  .article-list .note-header .note-meta {
     justify-content: space-between;
     flex-wrap: nowrap;
     gap: var(--space-2);
   }
 }
 
-@media (max-width: 600px) {
-  .note-header .note-meta {
+@media (max-width: 480px) {
+  .article-list .note-header .note-meta {
     flex-wrap: wrap;
+    justify-content: flex-start;
     gap: var(--space-2);
   }
   
   .note-count {
     flex-shrink: 0;
     white-space: nowrap;
-    min-width: auto;
   }
   
   .sort-controls {
     flex-shrink: 1;
     min-width: 0;
     gap: 1px;
+    margin-left: 0;
+    justify-content: flex-start;
   }
   
   .sort-btn {

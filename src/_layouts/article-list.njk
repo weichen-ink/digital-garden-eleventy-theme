@@ -57,6 +57,7 @@ hideSidebar: true
   {% set backText = "← 所有分类" %}
 {% endif %}
 
+<div class="article-list">
 <div class="note-header">
   <div class="note-header-main">
     <h1 class="note-title">
@@ -143,4 +144,5 @@ hideSidebar: true
   {% else %}
     <p class="no-posts-message">这个{{ "文件夹" if listType == "folder" else ("标签" if listType == "tag" else "分类") }}下还没有文章。</p>
   {% endif %}
+</div>
 </div>
