@@ -401,9 +401,9 @@ push_to_remote() {
     echo
     
     # 询问用户确认
-    echo -n "确认推送到远程仓库？(y/N): "
+    echo -n "确认推送到远程仓库？(Y/n): "
     read -r confirm
-    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+    if [[ "$confirm" =~ ^[Nn]$ ]]; then
         log_info "用户取消推送操作"
         return 0
     fi
@@ -498,9 +498,9 @@ main() {
     show_current_config
     
     # 询问用户确认
-    echo -n "确认使用以上配置进行同步？(y/N): "
+    echo -n "确认使用以上配置进行同步？(Y/n): "
     read -r confirm
-    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+    if [[ "$confirm" =~ ^[Nn]$ ]]; then
         log_info "用户取消操作"
         exit 0
     fi
