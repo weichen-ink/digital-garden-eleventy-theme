@@ -242,6 +242,15 @@ module.exports = function(eleventyConfig) {
   // 添加全局配置数据
   eleventyConfig.addGlobalData("garden", gardenConfig);
   
+  // 标准化cssclasses处理 - 统一转换为空格分隔的字符串
+  eleventyConfig.addFilter("cssclasses", function(cssclasses) {
+    if (!cssclasses) return '';
+    if (Array.isArray(cssclasses)) {
+      return cssclasses.join(' ');
+    }
+    return cssclasses.toString();
+  });
+  
   // HTML压缩 - 根据配置文件决定是否启用
   if (gardenConfig.build && gardenConfig.build.minifyHtml) {
     eleventyConfig.addTransform("htmlMinifier", function(content, outputPath) {

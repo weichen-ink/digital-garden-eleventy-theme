@@ -3080,6 +3080,11 @@ a:hover {
   --cards-image-fit: contain;
 }
 
+.article-content.list-cards.cards-fit .note-content ul {
+  grid-template-columns: repeat(auto-fill, 160px);
+  justify-content: start;
+}
+
 .article-content.list-cards.cards-fit .note-content li > *:first-child:has(img.content-image) {
   padding: 0 !important;
   background-color: var(--color-bg-subtle);
