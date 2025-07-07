@@ -3069,6 +3069,9 @@ a:hover {
 
 .article-content.list-cards.cards-cover .note-content li img.content-image {
   border-radius: 0;
+  max-width: 100% !important;
+  width: 100% !important;
+  height: auto !important;
 }
 
 /* 底部对齐 */
