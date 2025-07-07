@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% if title %}{{ title }} - {% endif %}{{ (garden.site and garden.site.title) | default(site.title) | default("Digital Garden") }}</title>
+  <title>{% if title %}{{ title }}{% else %}{{ (page.fileSlug | split('/') | last) }}{% endif %} - {{ (garden.site and garden.site.title) | default(site.title) | default("Digital Garden") }}</title>
   <meta name="description" content="{{ description | default((garden.site and garden.site.description) | default(site.description)) }}">
   
   <!-- 主要样式文件 -->
