@@ -370,11 +370,11 @@ module.exports = function(eleventyConfig) {
     return result;
   };
 
-  // Markdown配置
+  // Markdown配置 - 禁用linkify，只处理标准markdown链接
   let markdownLibrary = markdownIt({
     html: true,
     breaks: true,
-    linkify: true
+    linkify: false  // 禁用自动链接，只处理标准markdown链接格式
   }).use(markdownItAnchor, {
     permalink: markdownItAnchor.permalink.ariaHidden({
       placement: "after",
