@@ -16,7 +16,7 @@ layout: base.njk
   而不是删除或重命名此文件。
 #}
 
-<div class="article-content{% if cssclasses %}{% if cssclasses.length !== undefined %} {{ cssclasses | join(' ') }}{% else %} {{ cssclasses }}{% endif %}{% endif %}">
+<div class="article-content{% if cssclasses %}{% if cssclasses[0] %} {{ cssclasses | join(' ') }}{% else %} {{ cssclasses }}{% endif %}{% endif %}">
   {% if not hideTitle %}
   <div class="note-header">
     <h1 class="note-title">{{ title or (page.fileSlug | split('/') | last) }}</h1>
