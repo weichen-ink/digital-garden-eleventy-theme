@@ -1,8 +1,8 @@
 # Digital Garden Eleventy Theme 🌿
 
-一个现代、优雅的 Eleventy 数字花园主题，专为知识管理和思维连接而设计。让你的笔记像花园一样自然生长！
+🌐 **[在线演示](https://digital-garden-eleventy-theme.vercel.app/)** 
 
-🌐 **[在线演示](https://garden.weichen.ink)** 
+一个现代、优雅的 Eleventy 数字花园主题，专为知识管理和思维连接而设计。让你的笔记像花园一样自然生长！
 
 这是一个功能完整的数字花园解决方案，无论你是写作爱好者、知识工作者，还是想要构建个人博客的用户，都能在这里找到合适的功能。
 
@@ -154,8 +154,6 @@ tags: [笔记方法, 双链笔记, 效率工具]
 - **[双链笔记](content/theme-doc/双链笔记.md)** - 深入了解双链语法和反向链接
 - **[常见问题](content/theme-doc/常见问题.md)** - 解答使用过程中的常见疑问
 - **[主题升级指南](content/theme-doc/主题升级指南.md)** - 如何升级到新版本
-
-🌐 **[在线演示](https://garden.weichen.ink)** 
 
 ## 💡 使用建议
 
