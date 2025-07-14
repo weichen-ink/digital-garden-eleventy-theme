@@ -143,7 +143,19 @@ tags: [笔记方法, 双链笔记, 效率工具]
 
 ## 📚 完整文档
 
-想要深入了解所有功能？请查看：🌐 **[在线演示](https://garden.weichen.ink)** 
+想要深入了解所有功能？请查看详细文档：
+
+### 📖 基础指南
+- **[快速开始](content/theme-doc/快速开始.md)** - 从零开始搭建你的数字花园
+- **[主题配置](content/theme-doc/主题配置.md)** - 个性化配置你的网站设置
+- **[写作指南](content/theme-doc/写作指南.md)** - 掌握 Markdown 写作技巧和最佳实践
+
+### 🔧 核心功能
+- **[双链笔记](content/theme-doc/双链笔记.md)** - 深入了解双链语法和反向链接
+- **[常见问题](content/theme-doc/常见问题.md)** - 解答使用过程中的常见疑问
+- **[主题升级指南](content/theme-doc/主题升级指南.md)** - 如何升级到新版本
+
+🌐 **[在线演示](https://garden.weichen.ink)** 
 
 ## 💡 使用建议
 
