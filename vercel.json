@@ -3,7 +3,7 @@
   "cleanUrls": true,
   "headers": [
     {
-      "source": "/assets/**",
+      "source": "/assets/(.*)",
       "headers": [
         {
           "key": "Cache-Control", 
@@ -12,7 +12,7 @@
       ]
     },
     {
-      "source": "/content/**",
+      "source": "/content/(.*)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -21,7 +21,7 @@
       ]
     },
     {
-      "source": "/**.(woff|woff2|ttf|otf)",
+      "source": "/(.*\\.(woff|woff2|ttf|otf))",
       "headers": [
         {
           "key": "Cache-Control",
