@@ -3,7 +3,7 @@
   "cleanUrls": true,
   "headers": [
     {
-      "source": "/src/assets/(.*\\.(css|js))",
+      "source": "/assets/(.*\\.(css|js))",
       "headers": [
         {
           "key": "Cache-Control", 
@@ -12,7 +12,7 @@
       ]
     },
     {
-      "source": "/src/assets/(.*\\.(png|jpg|jpeg|gif|svg|webp|woff|woff2))",
+      "source": "/assets/(.*\\.(png|jpg|jpeg|gif|svg|webp|woff|woff2))",
       "headers": [
         {
           "key": "Cache-Control",
