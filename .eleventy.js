@@ -400,6 +400,7 @@ module.exports = function(eleventyConfig) {
   eleventyConfig.addPassthroughCopy({
     "src/assets/images": "src/assets/images",
     "src/assets/fonts": "src/assets/fonts",
+    "src/assets/favicon": "src/assets/favicon",
     "src/assets/css/highlight-themes": "src/assets/css/highlight-themes",
     "src/runtime/colors.config.js": "src/runtime/colors.config.js"
   });

@@ -9,6 +9,7 @@ module.exports = {
     author: "Your Name", // 作者名称，显示在页脚和文章元信息中
     year: 2025, // 版权年份
     language: "zh-CN", // 网站语言，影响HTML lang属性和语义化
+    faviconPath: "/assets/favicon", //网站favicon路径，建议尺寸32x32，格式.ico或.png
     repository: "https://github.com/yourusername/digital-garden" // 项目仓库地址（可选）
   },
   
