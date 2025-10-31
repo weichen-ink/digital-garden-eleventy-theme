@@ -205,7 +205,7 @@ module.exports = function(eleventyConfig) {
   
   const themeInfo = {
     designer: "微尘",
-    website: "https://garden.weichen.ink",
+    website: "https://weichen.ink",
     name: packageJson.description || packageJson.name,
     version: packageJson.version,
     description: packageJson.description, // 使用package.json的description作为主要描述
