@@ -11,7 +11,7 @@
     "clean": "rm -rf _site",
     "preview": "npm run build && npx serve _site",
     "theme:setup": "git remote add upstream https://github.com/weichen-ink/digital-garden-eleventy-theme.git",
-    "theme:pull": "git fetch upstream && git merge upstream/main"
+    "theme:pull": "git fetch upstream && git merge upstream/main --allow-unrelated-histories"
   },
   "keywords": [
     "eleventy",
