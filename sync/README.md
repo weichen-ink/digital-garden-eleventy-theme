@@ -12,14 +12,15 @@
 
 ### 🍎 macOS
 
-1. 右键编辑 `sync-mac.command`，修改以下配置：
+1. 在终端执行：`chmod +x sync-mac.command` （只需首次执行）
+
+2. 右键编辑 `sync-mac.command`，修改以下配置：
    ```bash
    OBSIDIAN_PATH="/Users/你的用户名/Documents/Obsidian仓库名/Garden"
    TARGET_PATH="/Users/你的用户名/Documents/github/digital-garden-eleventy-theme/content"
    ```
 
-2. 双击 `sync-mac.command` 运行
-   - 首次运行可能需要在"系统偏好设置" > "安全性与隐私"中允许
+3. 双击 `sync-mac.command` 运行
 
 ### 💻 Windows
 
