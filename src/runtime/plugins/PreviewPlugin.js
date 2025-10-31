@@ -222,12 +222,24 @@ class PreviewPlugin extends Plugin {
 
   // 提取链接信息 - 优化版本
   extractLinkInfo(linkElement) {
-    const noteTitle = linkElement.getAttribute('data-note-title') || 
+    const noteTitle = linkElement.getAttribute('data-note-title') ||
                      linkElement.querySelector('.backlink-title')?.textContent?.trim() ||
                      linkElement.textContent.trim();
-    
-    const linkUrl = linkElement.getAttribute('data-url') || linkElement.href;
-    
+
+    // 优先使用 data-url，如果没有则从 href 提取相对路径
+    let linkUrl = linkElement.getAttribute('data-url');
+    if (!linkUrl && linkElement.href) {
+      // linkElement.href 返回绝对URL，需要转换为相对路径
+      // 例如: http://localhost:8080/page/ -> /page/
+      try {
+        const url = new URL(linkElement.href);
+        linkUrl = url.pathname;
+      } catch (e) {
+        // 如果URL解析失败，fallback到href
+        linkUrl = linkElement.href;
+      }
+    }
+
     return { noteTitle, linkUrl };
   }
 
