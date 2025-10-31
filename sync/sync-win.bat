@@ -12,10 +12,10 @@ REM ==================== 配置区域 ====================
 REM 请修改以下路径为你自己的路径
 
 REM Obsidian 笔记文件夹路径（要同步的源文件夹完整路径）
-set "OBSIDIAN_PATH=C:\Users\你的用户名\Documents\Obsidian仓库名\Garden"
+set "OBSIDIAN_PATH=C:\Users\weichen\Documents\obsidian\better-life\_Garden"
 
 REM Git 仓库目标文件夹路径（同步到哪里的完整路径）
-set "TARGET_PATH=C:\Users\你的用户名\Documents\github\digital-garden-eleventy-theme\content"
+set "TARGET_PATH=C:\Users\weichen\Documents\github\weichen.ink\content"
 
 REM ==================== 配置区域结束 ====================
 
@@ -125,16 +125,22 @@ exit /b 1
 echo 📦 检查 Git 更改...
 cd /d "%TARGET_REPO%"
 
-git diff --quiet
-if %errorlevel% equ 0 (
-    git diff --staged --quiet
-    if %errorlevel% equ 0 (
-        echo ℹ️  没有检测到更改
-        echo.
-        echo ✅ 同步完成
-        pause
-        exit /b 0
-    )
+REM 检查是否有更改（包括未跟踪的文件）
+git status --porcelain > nul 2>&1
+if errorlevel 1 (
+    echo ❌ Git 状态检查失败
+    pause
+    exit /b 1
+)
+
+for /f %%i in ('git status --porcelain') do set HAS_CHANGES=1
+
+if not defined HAS_CHANGES (
+    echo ℹ️  没有检测到更改
+    echo.
+    echo ✅ 同步完成
+    pause
+    exit /b 0
 )
 
 echo.
@@ -147,7 +153,7 @@ for /f "tokens=1-4 delims=/ " %%a in ('date /t') do set "DATE=%%a-%%b-%%c"
 for /f "tokens=1-2 delims=: " %%a in ('time /t') do set "TIME=%%a:%%b:00"
 set "COMMIT_MSG=📝 [Win] 同步笔记: %DATE% %TIME%"
 
-echo 💾 提交更改...
+echo 💾 添加并提交更改...
 git add .
 git commit -m "%COMMIT_MSG%"
 

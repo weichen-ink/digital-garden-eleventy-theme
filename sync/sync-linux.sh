@@ -10,10 +10,10 @@
 # 请修改以下路径为你自己的路径
 
 # Obsidian 笔记文件夹路径（要同步的源文件夹完整路径）
-OBSIDIAN_PATH="/home/你的用户名/Documents/Obsidian仓库名/Garden"
+OBSIDIAN_PATH="/home/weichen/Documents/obsidian/better-life/_Garden"
 
 # Git 仓库目标文件夹路径（同步到哪里的完整路径）
-TARGET_PATH="/home/你的用户名/Documents/github/digital-garden-eleventy-theme/content"
+TARGET_PATH="/home/weichen/Documents/github/weichen.ink/content"
 
 # ==================== 配置区域结束 ====================
 
@@ -101,7 +101,8 @@ echo
 echo "📦 检查 Git 更改..."
 cd "$TARGET_REPO" || exit 1
 
-if git diff --quiet && git diff --staged --quiet; then
+# 检查是否有更改（包括未跟踪的文件）
+if [[ -z $(git status --porcelain) ]]; then
     echo "ℹ️  没有检测到更改"
     echo
     echo "✅ 同步完成"
@@ -117,7 +118,7 @@ echo
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 COMMIT_MSG="📝 [Linux] 同步笔记: $TIMESTAMP"
 
-echo "💾 提交更改..."
+echo "💾 添加并提交更改..."
 git add .
 git commit -m "$COMMIT_MSG"
 
