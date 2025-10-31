@@ -129,14 +129,14 @@
           <p class="footer-copyright">&copy; {{ (garden.site and garden.site.year) | default(site.year) | default(2024) }} {{ (garden.site and garden.site.author) | default(site.author) | default("Digital Garden") }}. All rights reserved.</p>
         </div>
         {% endif %}
-        
+
         <!-- 主题信息和技术栈 - 不可被配置覆盖 -->
         <div class="theme-credits">
           <p class="footer-credits">
-            Built with <span class="heart">♥️</span> using <a href="https://www.11ty.dev/" target="_blank" rel="noopener">Eleventy</a> • 
+            Built with <span class="heart">♥️</span> using <a href="https://www.11ty.dev/" target="_blank" rel="noopener">Eleventy</a> •
             Theme designed by <a href="{{ themeInfo.website }}" target="_blank" rel="noopener">{{ themeInfo.designer }}</a>
           </p>
-          <p class="footer-motto">让想法自由连接，让知识自然生长 🌱</p>
+          <p class="footer-motto">{{ themeInfo.slogan }}</p>
         </div>
       </div>
     </div>

@@ -210,7 +210,7 @@ module.exports = function(eleventyConfig) {
     version: packageJson.version,
     description: packageJson.description, // 使用package.json的description作为主要描述
     techStack: techStack.join(' + '), // 技术栈信息
-    slogan: "用心制作，让知识自由连接，让想法自然生长" // 主题理念
+    slogan: "让想法自由连接，让知识自然生长 🌱" // 主题理念
   };
   
   // 将主题信息添加到全局数据
