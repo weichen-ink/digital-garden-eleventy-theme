@@ -22,9 +22,9 @@ class PreviewPlugin extends Plugin {
     this.contentCache = new Map();
     
     // 事件处理器 - 绑定this上下文
-    // 减少防抖延迟，让响应更灵敏
-    this.handleMouseOver = this.debounce(this.onMouseOver.bind(this), 50);
-    this.handleMouseOut = this.debounce(this.onMouseOut.bind(this), 50);
+    // 使用更小的防抖延迟，提高响应速度
+    this.handleMouseOver = this.debounce(this.onMouseOver.bind(this), 30);
+    this.handleMouseOut = this.debounce(this.onMouseOut.bind(this), 30);
     this.handleDocumentClick = this.handleDocumentClick.bind(this);
     
     // 组件实例
@@ -34,14 +34,14 @@ class PreviewPlugin extends Plugin {
 
   getDefaultConfig() {
     return {
-      showDelay: 300,
-      hideDelay: 200,
+      showDelay: 200,      // 减少显示延迟，响应更快
+      hideDelay: 150,      // 减少隐藏延迟
       maxWidth: 480,
       maxHeight: 400,
       smallWidth: 280,
       smallHeight: 80,
       enableCache: true,
-      cacheExpiry: 300000 // 5分钟
+      cacheExpiry: 600000  // 增加到10分钟，减少重复请求
     };
   }
 
@@ -106,15 +106,20 @@ class PreviewPlugin extends Plugin {
     const targetElement = this.getTargetElement(e.target);
     if (!targetElement) return;
 
-    // 如果是同一个链接，无需重新处理
-    if (this.currentLink === targetElement) return;
+    // 如果是同一个链接且预览已显示，无需重新处理
+    if (this.currentLink === targetElement && this.isVisible) {
+      return;
+    }
 
     this.currentLink = targetElement;
     this.clearTimers();
 
     // 延迟显示预览
     this.showTimer = setTimeout(() => {
-      this.showPreview(targetElement);
+      // 确保在延迟后仍然是同一个链接
+      if (this.currentLink === targetElement) {
+        this.showPreview(targetElement);
+      }
     }, this.config.showDelay);
   }
 
@@ -128,8 +133,13 @@ class PreviewPlugin extends Plugin {
     const targetElement = this.getTargetElement(e.target);
     if (!targetElement) return;
 
-    // 只要鼠标离开了任何链接元素，就启动隐藏计时器
-    this.clearTimers();
+    // 只清理显示定时器，不影响已显示的预览
+    if (this.showTimer) {
+      clearTimeout(this.showTimer);
+      this.showTimer = null;
+    }
+
+    // 启动隐藏计时器
     this.hideTimer = setTimeout(() => {
       if (!this.isMouseOverPreview()) {
         this.hidePreview();
@@ -197,23 +207,36 @@ class PreviewPlugin extends Plugin {
 
   // 显示预览
   async showPreview(linkElement) {
+    // 如果链接元素已经不是当前链接，取消显示
+    if (this.currentLink !== linkElement) {
+      return;
+    }
+
     const { noteTitle, linkUrl } = this.extractLinkInfo(linkElement);
-    
+
     // 处理断开的链接
     if (linkElement.classList.contains('broken')) {
       this.displayPreview(this.getBrokenLinkContent(), linkElement, 'small');
       return;
     }
 
+    // 如果没有有效URL，不显示预览
+    if (!linkUrl) {
+      console.warn('PreviewPlugin: No valid URL found for link');
+      return;
+    }
+
     try {
       // 尝试从缓存获取内容
       const previewContent = await this.getPreviewContent(linkUrl, noteTitle);
-      
+
+      // 再次检查是否仍然是当前链接（避免快速切换导致的问题）
       if (previewContent && this.currentLink === linkElement) {
         this.displayPreview(previewContent, linkElement);
       }
     } catch (error) {
       console.warn('Failed to load preview:', error);
+      // 确保仍然是当前链接才显示错误
       if (this.currentLink === linkElement) {
         this.displayPreview(this.getErrorContent(), linkElement, 'small');
       }
@@ -247,33 +270,47 @@ class PreviewPlugin extends Plugin {
   async getPreviewContent(linkUrl, noteTitle) {
     if (!linkUrl) throw new Error('No URL provided');
 
+    // 规范化 URL（确保缓存键一致）
+    const normalizedUrl = this.normalizeUrl(linkUrl);
+
     // 检查缓存
     if (this.config.enableCache) {
-      const cached = this.contentCache.get(linkUrl);
+      const cached = this.contentCache.get(normalizedUrl);
       if (cached && Date.now() - cached.timestamp < this.config.cacheExpiry) {
         return cached.content;
       }
     }
 
     // 获取新内容
-    const response = await fetch(linkUrl);
+    const response = await fetch(normalizedUrl);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    
+
     const html = await response.text();
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
-    
-    const content = this.extractor.extract(doc, linkUrl, noteTitle);
-    
+
+    const content = this.extractor.extract(doc, normalizedUrl, noteTitle);
+
     // 缓存内容
     if (this.config.enableCache && content) {
-      this.contentCache.set(linkUrl, {
+      this.contentCache.set(normalizedUrl, {
         content,
         timestamp: Date.now()
       });
     }
-    
+
     return content;
+  }
+
+  // 规范化 URL
+  normalizeUrl(url) {
+    // 移除末尾的 index.html
+    let normalized = url.replace(/\/index\.html$/, '/');
+    // 确保以 / 结尾的目录 URL
+    if (!normalized.endsWith('/') && !normalized.includes('.')) {
+      normalized += '/';
+    }
+    return normalized;
   }
 
   // 显示预览内容
