@@ -120,6 +120,21 @@ tags: [笔记方法, 双链笔记, 效率工具]
 
 系统会自动为每个分类和标签生成对应的页面。
 
+### 🔗 页面别名 (Aliases)
+让一个页面通过多个URL访问，适用于URL重构、多语言路径等场景：
+```markdown
+---
+title: 配置指南
+permalink: /configuration/
+aliases:
+  - /config/          # 短链接
+  - /旧配置/          # 旧URL
+  - /settings/        # 别名URL
+---
+```
+
+每个别名会生成一个轻量级重定向HTML，自动跳转到主URL，SEO友好。
+
 
 ## 🎨 自定义样式
 

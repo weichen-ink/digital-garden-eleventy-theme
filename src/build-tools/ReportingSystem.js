@@ -31,18 +31,6 @@ const buildConfig = {
     dim: '\x1b[2m',          // 暗色 - 次要信息
     bright: '\x1b[1m',       // 高亮 - 强调信息
     reset: '\x1b[0m'         // 重置颜色
-  },
-
-
-  // 🎯 显示选项
-  display: {
-    showBanner: true,
-    showSummary: true,
-    showDetails: true,
-    showWarnings: true,
-    compact: false,
-    verbose: false,
-    quiet: false
   }
 };
 
@@ -167,9 +155,10 @@ ${this.formatLine(`🚀 缓存状态: ${this.stats.cacheEnabled ? '已启用' : 
  * 📄 HTML页面统计组件
  */
 class HtmlStatsComponent extends BaseComponent {
-  constructor(htmlStats, config = {}) {
+  constructor(htmlStats, aliasStats = null, config = {}) {
     super(config);
     this.htmlStats = htmlStats;
+    this.aliasStats = aliasStats;
   }
 
   render() {
@@ -179,11 +168,11 @@ class HtmlStatsComponent extends BaseComponent {
     const sourceTypesText = Object.entries(this.htmlStats.sourceTypes)
       .map(([ext, count]) => `${ext}: ${count}个`)
       .join(', ');
-    
+
     const pageTypesText = Object.entries(this.htmlStats.pageTypes)
       .map(([type, count]) => `${type}: ${count}个`)
       .join(', ');
-    
+
     // HTML压缩状态
     const compressionStatus = this.htmlStats.minified ? '已压缩' : '未压缩';
     const compressionIcon = this.htmlStats.minified ? '🗜️' : '📄';
@@ -195,6 +184,13 @@ ${this.formatLine(`${compressionIcon} HTML压缩: ${compressionStatus}          
 
     if (pageTypesText) {
       output += `\n${this.formatLine(`🏷️  页面分类: ${pageTypesText}`)}`;
+    }
+
+    // 添加 Aliases 统计（如果有）
+    if (this.aliasStats && this.aliasStats.totalRedirects > 0) {
+      const aliasText = `生成 ${this.aliasStats.totalRedirects} 个重定向`;
+      const warningText = this.aliasStats.conflicts > 0 ? `, ${this.aliasStats.conflicts} 个冲突` : '';
+      output += `\n${this.formatLine(`🔗 页面别名: ${aliasText}${warningText}`)}`;
     }
 
     return output;
@@ -211,6 +207,16 @@ class WarningsComponent extends BaseComponent {
     this.errors = errors || [];
   }
 
+  /**
+   * 从警告/错误对象中提取消息文本
+   * @param {Object|string} warningOrError - 警告或错误对象
+   * @returns {string} 消息文本
+   */
+  getWarningMessage(warningOrError) {
+    const msg = warningOrError.message || warningOrError;
+    return typeof msg === 'string' ? msg : JSON.stringify(msg);
+  }
+
   render() {
     if (this.warnings.length === 0 && this.errors.length === 0) return '';
 
@@ -220,26 +226,24 @@ class WarningsComponent extends BaseComponent {
     if (this.warnings.length > 0) {
       output += `
 ${this.createSeparator(`⚠️  警告信息 (${this.warnings.length})`)}`;
-      
+
       // 添加重名文件说明
       const hasDuplicateWarnings = this.warnings.some(warning => {
-        const msg = warning.message || warning;
-        const msgText = typeof msg === 'string' ? msg : JSON.stringify(msg);
+        const msgText = this.getWarningMessage(warning);
         return msgText.includes('重名附件') || msgText.includes('重名笔记');
       });
-      
+
       if (hasDuplicateWarnings) {
         output += `\n${this.formatLine('检测到重名文件，系统将使用标记 ✓ 的文件，建议重命名其他文件以避免冲突。')}`;
         output += '\n'; // 空行分隔
       }
-      
+
       // 去重并格式化警告
       const uniqueWarnings = this.deduplicateWarnings(this.warnings);
-      
+
       uniqueWarnings.forEach((warning, index) => {
-        const msg = warning.message || warning;
-        const msgText = typeof msg === 'string' ? msg : JSON.stringify(msg);
-        
+        const msgText = this.getWarningMessage(warning);
+
         // 检查重名文件警告，进行特殊格式化
         if (msgText.includes('重名附件') || msgText.includes('重名笔记')) {
           output += this.formatDuplicateWarning(msgText);
@@ -258,10 +262,9 @@ ${this.createSeparator(`⚠️  警告信息 (${this.warnings.length})`)}`;
       if (this.warnings.length > 0) output += '\n';
       output += `
 ${this.createSeparator(`❌ 错误信息 (${this.errors.length})`)}`;
-      
+
       this.errors.forEach(error => {
-        const msg = error.message || error;
-        const msgText = typeof msg === 'string' ? msg : JSON.stringify(msg);
+        const msgText = this.getWarningMessage(error);
         output += `\n${this.formatLine(`• ${msgText}`)}`;
       });
     }
@@ -272,11 +275,8 @@ ${this.createSeparator(`❌ 错误信息 (${this.errors.length})`)}`;
   deduplicateWarnings(warnings) {
     const seen = new Set();
     return warnings.filter(warning => {
-      const msg = warning.message || warning;
-      const msgText = typeof msg === 'string' ? msg : JSON.stringify(msg);
-      if (seen.has(msgText)) {
-        return false;
-      }
+      const msgText = this.getWarningMessage(warning);
+      if (seen.has(msgText)) return false;
       seen.add(msgText);
       return true;
     });
@@ -401,8 +401,8 @@ class ReportTemplate {
     return new SummaryComponent(stats, buildInfo, processedAssets, config).render();
   }
 
-  static htmlStats(htmlStats, config = {}) {
-    return new HtmlStatsComponent(htmlStats, config).render();
+  static htmlStats(htmlStats, aliasStats = null, config = {}) {
+    return new HtmlStatsComponent(htmlStats, aliasStats, config).render();
   }
 
   static warnings(warnings, errors, config = {}) {
@@ -452,9 +452,13 @@ class ReportTemplate {
       output += '\n\n' + summaryContent;
     }
 
-    // HTML页面统计
+    // HTML页面统计（包含Aliases）
     if (buildInfo?.htmlStats) {
-      const htmlStatsContent = this.htmlStats(buildInfo.htmlStats, config);
+      const htmlStatsContent = this.htmlStats(
+        buildInfo.htmlStats,
+        buildInfo.aliasStats,  // 传入aliasStats一起显示
+        config
+      );
       if (htmlStatsContent) {
         output += '\n\n' + htmlStatsContent;
       }
@@ -539,35 +543,28 @@ class EnhancedWarningCollector {
     return 'unknown';
   }
 
-  generateBuildStats() {
+  generateBuildStats(buildContext = {}) {
     // 生成构建统计信息
     const buildDuration = Date.now() - this.startTime;
-    
+
     return {
-      totalAssets: global.buildContext?.totalAssets || 0,
-      totalSize: global.buildContext?.totalSize || 0,
+      totalAssets: buildContext.totalAssets || 0,
+      totalSize: buildContext.totalSize || 0,
       cacheEnabled: true,
-      assetTypes: global.buildContext?.assetTypes || { css: 1, js: 1 },
+      assetTypes: buildContext.assetTypes || { css: 1, js: 1 },
       buildDuration
     };
   }
 
-  showFinalReport() {
-    const themeInfo = global.themeInfo || {};
-    const stats = this.generateBuildStats();
+  showFinalReport(buildContext = {}, themeInfo = {}) {
+    const stats = this.generateBuildStats(buildContext);
     const buildInfo = {
       startTime: this.startTime,
-      htmlStats: global.buildContext?.htmlStats
+      htmlStats: buildContext.htmlStats,
+      aliasStats: buildContext.aliasStats
     };
-    const processedAssets = global.buildContext?.processedAssets || [];
-    const isServeMode = global.buildContext?.isServeMode || false;
-
-    // 设置全局构建上下文用于性能分析
-    global.buildContext = {
-      ...global.buildContext,
-      buildDuration: Date.now() - this.startTime,
-      stats
-    };
+    const processedAssets = buildContext.processedAssets || [];
+    const isServeMode = buildContext.isServeMode || false;
 
     const reportData = {
       themeInfo,

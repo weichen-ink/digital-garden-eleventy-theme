@@ -47,6 +47,7 @@ const outputDir = "_site";   // 输出目录
 // 导入简化的资源构建器和完整的报告系统
 const AssetBuilder = require("./src/build-tools/AssetBuilder.js");
 const { EnhancedWarningCollector } = require("./src/build-tools/ReportingSystem.js");
+const AliasesProcessor = require("./src/build-tools/AliasesProcessor.js");
 
 // 初始化全局警告收集器（完整功能版本）
 if (!global.buildWarningCollector) {
@@ -132,6 +133,63 @@ function findImagePath(imageName, contentDir = inputDir) {
   return searchDirectory(contentDir);
 }
 
+
+// 添加全局数据以便在搜索数据生成和aliases处理时使用
+let allCollections = {};
+
+/**
+ * 通用HTML统计函数 - 分析results生成统计信息
+ * @param {Array} results - Eleventy构建结果数组
+ * @param {Object} config - 配置对象
+ * @returns {Object} 统计信息对象
+ */
+function generateHtmlStats(results, config = {}) {
+  const htmlStats = {
+    totalPages: results.length,
+    totalSize: 0,
+    sourceTypes: {},
+    pageTypes: {},
+    minified: config.minifyHtml || false
+  };
+
+  // 分析每个页面
+  results.forEach(page => {
+    // 计算文件大小
+    if (page.content) {
+      htmlStats.totalSize += Buffer.byteLength(page.content, 'utf8');
+    }
+
+    // 分析源文件类型
+    if (page.inputPath) {
+      const ext = path.extname(page.inputPath) || '.unknown';
+      htmlStats.sourceTypes[ext] = (htmlStats.sourceTypes[ext] || 0) + 1;
+    }
+
+    // 分析页面类型（根据URL进行详细分类）
+    if (page.url) {
+      let type = 'default';
+      if (page.url.includes('/theme-doc/')) {
+        type = '主题文档';
+      } else if (page.url.includes('/tags/')) {
+        type = '标签页面';
+      } else if (page.url.includes('/categories/')) {
+        type = '分类页面';
+      } else if (page.url === '/' || page.url.includes('index')) {
+        type = '首页';
+      } else if (page.url.includes('/404')) {
+        type = '错误页面';
+      } else if (page.inputPath && page.inputPath.endsWith('.md')) {
+        type = '内容页面';
+      } else if (page.inputPath && page.inputPath.endsWith('.njk')) {
+        type = '模板页面';
+      }
+
+      htmlStats.pageTypes[type] = (htmlStats.pageTypes[type] || 0) + 1;
+    }
+  });
+
+  return htmlStats;
+}
 
 module.exports = function(eleventyConfig) {
   // 🎨 主题配置信息 - 从package.json读取版本、名称和描述
@@ -835,6 +893,8 @@ module.exports = function(eleventyConfig) {
   // 所有内容集合，包括首页
   eleventyConfig.addCollection("all", function(collectionApi) {
     const mdCollection = collectionApi.getFilteredByGlob(`${inputDir}/**/*.md`);
+    // 保存到全局变量以便aliases处理时使用
+    allCollections.all = mdCollection;
     return mdCollection;
   });
 
@@ -1053,48 +1113,10 @@ module.exports = function(eleventyConfig) {
     }
   });
 
-  // 添加全局数据以便在搜索数据生成时使用
-  let allCollections = {};
-  
   // 在构建完成后生成搜索数据和处理自定义CSS
   eleventyConfig.on('eleventy.after', async ({dir, results, runMode, outputMode}) => {
-    // 收集HTML文件构建统计
-    const htmlStats = {
-      totalPages: results.length,
-      pageTypes: {},
-      totalSize: 0,
-      sourceTypes: {},
-      templateTypes: {}
-    };
-
-    // 分析每个生成的HTML文件
-    results.forEach(result => {
-      // 计算文件大小
-      if (result.content) {
-        htmlStats.totalSize += Buffer.byteLength(result.content, 'utf8');
-      }
-
-      // 分析源文件类型
-      if (result.inputPath) {
-        const ext = path.extname(result.inputPath);
-        htmlStats.sourceTypes[ext] = (htmlStats.sourceTypes[ext] || 0) + 1;
-        
-        // 分析页面类型
-        if (result.inputPath.includes('/content/')) {
-          htmlStats.pageTypes['内容页面'] = (htmlStats.pageTypes['内容页面'] || 0) + 1;
-        } else if (result.inputPath.includes('/src/_templates/')) {
-          htmlStats.pageTypes['模板页面'] = (htmlStats.pageTypes['模板页面'] || 0) + 1;
-        } else {
-          htmlStats.pageTypes['其他页面'] = (htmlStats.pageTypes['其他页面'] || 0) + 1;
-        }
-      }
-
-      // 分析模板引擎类型
-      if (result.template && result.template.templateRender) {
-        const engine = result.template.templateRender.engine || 'unknown';
-        htmlStats.templateTypes[engine] = (htmlStats.templateTypes[engine] || 0) + 1;
-      }
-    });
+    // 使用通用函数收集HTML文件构建统计
+    const htmlStats = generateHtmlStats(results, gardenConfig.build || {});
 
     // 生成搜索数据JSON文件（仅当搜索功能启用时）
     if (gardenConfig.search && gardenConfig.search.enabled) {
@@ -1178,13 +1200,36 @@ module.exports = function(eleventyConfig) {
     // 🏗️ 构建静态资源文件
     try {
       await assetBuilder.buildAll();
-      
+
       if (!isServeMode) {
         console.log('🎉 Assets processed successfully');
       }
-      
+
     } catch (error) {
       console.error('❌ Asset processing failed:', error.message);
+    }
+
+    // 🔗 处理页面别名 (Aliases) - 仅在serve模式下处理
+    if (isServeMode) {
+      try {
+        const aliasProcessor = new AliasesProcessor(
+          dir.output,
+          global.buildWarningCollector
+        );
+
+        const aliasStats = await aliasProcessor.processAliases(allCollections);
+
+        // 将统计信息添加到全局构建上下文
+        if (global.buildContext) {
+          global.buildContext.aliasStats = aliasStats;
+        }
+
+      } catch (error) {
+        console.error('❌ Aliases处理失败:', error.message);
+        if (error.stack) {
+          console.error(error.stack);
+        }
+      }
     }
   });
   
@@ -1344,56 +1389,19 @@ module.exports = function(eleventyConfig) {
     eleventyConfig.on('eleventy.after', ({ results }) => {
       // 在serve模式下，延迟一点时间让Eleventy的服务器启动信息先输出
       setTimeout(() => {
-        // 更新HTML统计信息
+        // 更新HTML统计信息（使用通用函数）
         if (results && results.length > 0) {
-          // 计算HTML文件的实际大小
-          let totalHtmlSize = 0;
-          try {
-            results.forEach(page => {
-              if (page.outputPath && fs.existsSync(page.outputPath)) {
-                const stats = fs.statSync(page.outputPath);
-                totalHtmlSize += stats.size;
-              }
-            });
-          } catch (error) {
-            // 如果无法读取文件大小，使用默认值
-            totalHtmlSize = results.length * 5000; // 估算每个页面5KB
+          // 保留已有的 aliasStats，只更新 htmlStats
+          const existingAliasStats = global.buildContext.aliasStats;
+
+          global.buildContext.htmlStats = generateHtmlStats(results, gardenConfig.build || {});
+
+          // 恢复 aliasStats（如果有的话）
+          if (existingAliasStats) {
+            global.buildContext.aliasStats = existingAliasStats;
           }
-          
-          global.buildContext.htmlStats = {
-            totalPages: results.length,
-            totalSize: totalHtmlSize,
-            minified: gardenConfig.build && gardenConfig.build.minifyHtml,
-            sourceTypes: results.reduce((types, page) => {
-              const ext = page.inputPath ? page.inputPath.split('.').pop() : 'unknown';
-              types[ext] = (types[ext] || 0) + 1;
-              return types;
-            }, {}),
-            pageTypes: results.reduce((types, page) => {
-              // 根据文件路径判断页面类型
-              let type = 'default';
-              if (page.url.includes('/theme-doc/')) {
-                type = '主题文档';
-              } else if (page.url.includes('/tags/')) {
-                type = '标签页面';
-              } else if (page.url.includes('/categories/')) {
-                type = '分类页面';
-              } else if (page.url === '/' || page.url.includes('index')) {
-                type = '首页';
-              } else if (page.url.includes('/404')) {
-                type = '错误页面';
-              } else if (page.inputPath && page.inputPath.endsWith('.md')) {
-                type = '内容页面';
-              } else if (page.inputPath && page.inputPath.endsWith('.njk')) {
-                type = '模板页面';
-              }
-              
-              types[type] = (types[type] || 0) + 1;
-              return types;
-            }, {})
-          };
         }
-        
+
         // 手动触发WikilinkPlugin的重复检测（确保在报告之前）
         try {
           const wikilinkPlugin = require('./src/eleventy-plugins/WikilinkPlugin.js');
@@ -1405,66 +1413,45 @@ module.exports = function(eleventyConfig) {
           // 忽略错误，继续生成报告
         }
         
-        // 显示完整的构建报告
-        global.buildWarningCollector.showFinalReport();
-        
+        // 显示完整的构建报告（传入buildContext和themeInfo，避免隐式依赖global）
+        global.buildWarningCollector.showFinalReport(
+          global.buildContext || {},
+          global.themeInfo || {}
+        );
+
         // 清理警告收集器，为下次构建做准备
         global.buildWarningCollector.clear();
       }, 500); // 给Eleventy足够时间输出服务器信息
     });
   } else {
     // 构建模式下在构建结束时显示报告
-    eleventyConfig.on('eleventy.after', ({ results }) => {
-      // 更新HTML统计信息
+    eleventyConfig.on('eleventy.after', async ({ dir, results }) => {
+      // 更新HTML统计信息（使用通用函数）
       if (results && results.length > 0) {
-        // 计算HTML文件的实际大小
-        let totalHtmlSize = 0;
-        try {
-          results.forEach(page => {
-            if (page.outputPath && fs.existsSync(page.outputPath)) {
-              const stats = fs.statSync(page.outputPath);
-              totalHtmlSize += stats.size;
-            }
-          });
-        } catch (error) {
-          // 如果无法读取文件大小，使用默认值
-          totalHtmlSize = results.length * 5000; // 估算每个页面5KB
-        }
-        
-        global.buildContext.htmlStats = {
-          totalPages: results.length,
-          totalSize: totalHtmlSize,
-          minified: gardenConfig.build && gardenConfig.build.minifyHtml,
-          sourceTypes: results.reduce((types, page) => {
-            const ext = page.inputPath ? page.inputPath.split('.').pop() : 'unknown';
-            types[ext] = (types[ext] || 0) + 1;
-            return types;
-          }, {}),
-          pageTypes: results.reduce((types, page) => {
-            // 根据文件路径判断页面类型
-            let type = 'default';
-            if (page.url.includes('/theme-doc/')) {
-              type = '主题文档';
-            } else if (page.url.includes('/tags/')) {
-              type = '标签页面';
-            } else if (page.url.includes('/categories/')) {
-              type = '分类页面';
-            } else if (page.url === '/' || page.url.includes('index')) {
-              type = '首页';
-            } else if (page.url.includes('/404')) {
-              type = '错误页面';
-            } else if (page.inputPath && page.inputPath.endsWith('.md')) {
-              type = '内容页面';
-            } else if (page.inputPath && page.inputPath.endsWith('.njk')) {
-              type = '模板页面';
-            }
-            
-            types[type] = (types[type] || 0) + 1;
-            return types;
-          }, {})
-        };
+        global.buildContext.htmlStats = generateHtmlStats(results, gardenConfig.build || {});
       }
-      
+
+      // 🔗 处理页面别名 (Aliases) - 在构建模式下，在显示报告之前处理
+      try {
+        const aliasProcessor = new AliasesProcessor(
+          dir.output || '_site',
+          global.buildWarningCollector
+        );
+
+        const aliasStats = await aliasProcessor.processAliases(allCollections);
+
+        // 将统计信息添加到全局构建上下文
+        if (global.buildContext) {
+          global.buildContext.aliasStats = aliasStats;
+        }
+
+      } catch (error) {
+        console.error('❌ Aliases处理失败:', error.message);
+        if (error.stack) {
+          console.error(error.stack);
+        }
+      }
+
       // 手动触发WikilinkPlugin的重复检测（确保在报告之前）
       try {
         const wikilinkPlugin = require('./src/eleventy-plugins/WikilinkPlugin.js');
@@ -1475,8 +1462,12 @@ module.exports = function(eleventyConfig) {
       } catch (error) {
         // 忽略错误，继续生成报告
       }
-      
-      global.buildWarningCollector.showFinalReport();
+
+      // 显示完整的构建报告（传入buildContext和themeInfo，避免隐式依赖global）
+      global.buildWarningCollector.showFinalReport(
+        global.buildContext || {},
+        global.themeInfo || {}
+      );
     });
   }
 
