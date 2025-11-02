@@ -749,7 +749,7 @@ module.exports = function(eleventyConfig) {
   // 获取摘录
   function getExcerpt(content, searchTerm, collections) {
     if (!content) return '';
-    
+
     // 移除HTML标签，获取纯文本内容
     let cleanContent = content
       .replace(/<[^>]*>/g, '') // 移除所有HTML标签
@@ -757,38 +757,15 @@ module.exports = function(eleventyConfig) {
       .replace(/\n/g, ' ') // 替换换行符
       .replace(/\s+/g, ' ') // 合并多个空格
       .trim();
-    
-    // 先在原始内容中查找搜索词的位置，然后再处理双链
-    const lowerOriginalContent = cleanContent.toLowerCase();
-    const lowerSearchTerm = searchTerm.toLowerCase();
-    let searchIndex = lowerOriginalContent.indexOf(lowerSearchTerm);
-    
-    // 如果在原始内容中没找到，检查是否在双链中
-    if (searchIndex === -1) {
-      // 查找所有双链格式 [[filename]] 或 [[filename|display]]
-      const wikilinkRegex = /\[\[([^\]]+)\]\]/g;
-      let match;
-      while ((match = wikilinkRegex.exec(cleanContent)) !== null) {
-        const linkContent = match[1];
-        const parts = linkContent.split('|');
-        const filename = parts[0].trim();
-        
-        // 检查搜索词是否匹配双链中的文件名
-        if (filename.toLowerCase() === lowerSearchTerm) {
-          searchIndex = match.index;
-          break;
-        }
-      }
-    }
-    
-    // 处理双链 - 将 [[filename]] 或 [[filename|display]] 转换为显示文本
+
+    // 先处理双链 - 将 [[filename]] 或 [[filename|display]] 转换为显示文本
     // 为来自双链的文本添加特殊标记，方便后续识别
     cleanContent = cleanContent.replace(/\[\[([^\]]+)\]\]/g, (match, content) => {
       // 解析双链内容，支持 [[filename]] 和 [[filename|display]] 格式
       const parts = content.split('|');
       const filename = parts[0].trim();
       const displayText = parts.length > 1 ? parts[1].trim() : null;
-      
+
       // 如果有显示文本，使用显示文本；否则查找对应的笔记标题
       if (displayText) {
         // 对于 [[filename|display]] 格式，直接使用显示文本
@@ -804,27 +781,43 @@ module.exports = function(eleventyConfig) {
             const noteFilename = pathParts[pathParts.length - 1].replace('.md', '');
             return noteFilename === filename;
           });
-          
+
           // 如果通过文件名没找到，尝试通过title匹配
           if (!targetNote) {
-            targetNote = collections.content.find(note => 
+            targetNote = collections.content.find(note =>
               note.data && note.data.title === filename
             );
           }
         }
-        
+
         // 使用和wikilink过滤器相同的标题逻辑
-        const resolvedTitle = targetNote ? 
-          ((targetNote.data && targetNote.data.title) || 
-           (targetNote.fileSlug && targetNote.fileSlug.split('/').pop()) || 
+        const resolvedTitle = targetNote ?
+          ((targetNote.data && targetNote.data.title) ||
+           (targetNote.fileSlug && targetNote.fileSlug.split('/').pop()) ||
            filename) : filename;
-        
+
         // 为来自双链的文本添加特殊标记
         return `⟪WIKILINK:${resolvedTitle}⟫`;
       }
     });
-    
-    // 重新查找处理后内容中搜索词的位置（如果之前没找到的话）
+
+    // 优先查找双链标记内的搜索词位置
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    let searchIndex = -1;
+    const wikilinkPattern = /⟪WIKILINK:([^⟫]*)⟫/gi;
+    let match;
+
+    // 先在所有双链标记中查找搜索词
+    while ((match = wikilinkPattern.exec(cleanContent)) !== null) {
+      const wikilinkText = match[1];
+      if (wikilinkText.toLowerCase().includes(lowerSearchTerm)) {
+        // 找到包含搜索词的双链，使用这个位置
+        searchIndex = match.index;
+        break;
+      }
+    }
+
+    // 如果在双链中没找到，再查找普通文本中的搜索词
     if (searchIndex === -1) {
       const lowerContent = cleanContent.toLowerCase();
       searchIndex = lowerContent.indexOf(lowerSearchTerm);
