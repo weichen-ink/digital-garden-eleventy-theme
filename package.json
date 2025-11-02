@@ -1,6 +1,6 @@
 {
   "name": "digital-garden-eleventy-theme",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "一个现代、优雅的 Eleventy 数字花园主题，专为知识管理和思维连接而设计",
   "main": ".eleventy.js",
   "scripts": {
