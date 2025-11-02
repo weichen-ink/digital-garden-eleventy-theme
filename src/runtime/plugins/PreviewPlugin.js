@@ -8,25 +8,29 @@ import { Plugin } from '../core/Plugin.js';
 class PreviewPlugin extends Plugin {
   constructor() {
     super('preview');
-    
+
     // 核心状态
     this.previewPopup = null;
     this.currentLink = null;
+    this.pendingLink = null;  // 待显示的链接
     this.isVisible = false;
-    
+
     // 定时器管理
     this.showTimer = null;
     this.hideTimer = null;
-    
+
     // 内容缓存系统
     this.contentCache = new Map();
-    
+
+    // 调试模式
+    this.debug = false;  // 设为 true 启用调试日志
+
     // 事件处理器 - 绑定this上下文
-    // 使用更小的防抖延迟，提高响应速度
-    this.handleMouseOver = this.debounce(this.onMouseOver.bind(this), 30);
-    this.handleMouseOut = this.debounce(this.onMouseOut.bind(this), 30);
+    // 移除防抖，使用更精确的事件控制
+    this.handleMouseOver = this.onMouseOver.bind(this);
+    this.handleMouseOut = this.onMouseOut.bind(this);
     this.handleDocumentClick = this.handleDocumentClick.bind(this);
-    
+
     // 组件实例
     this.positioner = null;
     this.extractor = null;
@@ -83,20 +87,14 @@ class PreviewPlugin extends Plugin {
     this.initializeExternalLinks();
   }
 
-  // 防抖函数
-  debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-      const later = () => {
-        clearTimeout(timeout);
-        func.apply(this, args);
-      };
-      clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
-    };
+  // 调试日志
+  log(...args) {
+    if (this.debug) {
+      console.log('[PreviewPlugin]', ...args);
+    }
   }
 
-  // 鼠标进入事件处理
+  // 鼠标进入事件处理 - 优化版
   onMouseOver(e) {
     // 忽略预览窗口内的事件
     if (this.previewPopup && this.previewPopup.contains(e.target)) {
@@ -106,24 +104,44 @@ class PreviewPlugin extends Plugin {
     const targetElement = this.getTargetElement(e.target);
     if (!targetElement) return;
 
+    this.log('Mouse over:', targetElement.textContent?.slice(0, 30));
+
+    // 清除隐藏定时器（鼠标移回链接或在链接内部移动）
+    if (this.hideTimer) {
+      clearTimeout(this.hideTimer);
+      this.hideTimer = null;
+      this.log('Cleared hide timer');
+    }
+
     // 如果是同一个链接且预览已显示，无需重新处理
     if (this.currentLink === targetElement && this.isVisible) {
+      this.log('Same link, already visible');
       return;
     }
 
-    this.currentLink = targetElement;
-    this.clearTimers();
+    // 如果是不同的链接，清除之前的显示定时器
+    if (this.pendingLink !== targetElement && this.showTimer) {
+      clearTimeout(this.showTimer);
+      this.showTimer = null;
+      this.log('Cleared previous show timer');
+    }
+
+    // 设置待显示的链接
+    this.pendingLink = targetElement;
 
     // 延迟显示预览
     this.showTimer = setTimeout(() => {
-      // 确保在延迟后仍然是同一个链接
-      if (this.currentLink === targetElement) {
+      // 双重检查：确保在延迟后仍然是同一个链接
+      if (this.pendingLink === targetElement) {
+        this.log('Showing preview for:', targetElement.textContent?.slice(0, 30));
+        // 设置当前链接，然后显示预览
+        this.currentLink = targetElement;
         this.showPreview(targetElement);
       }
     }, this.config.showDelay);
   }
 
-  // 鼠标离开事件处理
+  // 鼠标离开事件处理 - 优化版
   onMouseOut(e) {
     // 忽略预览窗口内的事件
     if (this.previewPopup && this.previewPopup.contains(e.target)) {
@@ -133,15 +151,23 @@ class PreviewPlugin extends Plugin {
     const targetElement = this.getTargetElement(e.target);
     if (!targetElement) return;
 
-    // 只清理显示定时器，不影响已显示的预览
-    if (this.showTimer) {
-      clearTimeout(this.showTimer);
-      this.showTimer = null;
+    this.log('Mouse out:', targetElement.textContent?.slice(0, 30));
+
+    // 如果不是当前待显示或已显示的链接，忽略
+    if (targetElement !== this.pendingLink && targetElement !== this.currentLink) {
+      return;
     }
 
-    // 启动隐藏计时器
+    // 不要立即清除showTimer，因为可能只是在卡片内部移动
+    // 只启动隐藏计时器
     this.hideTimer = setTimeout(() => {
       if (!this.isMouseOverPreview()) {
+        this.log('Hiding preview');
+        // 清除显示定时器（如果还在等待）
+        if (this.showTimer) {
+          clearTimeout(this.showTimer);
+          this.showTimer = null;
+        }
         this.hidePreview();
       }
     }, this.config.hideDelay);
@@ -207,11 +233,6 @@ class PreviewPlugin extends Plugin {
 
   // 显示预览
   async showPreview(linkElement) {
-    // 如果链接元素已经不是当前链接，取消显示
-    if (this.currentLink !== linkElement) {
-      return;
-    }
-
     const { noteTitle, linkUrl } = this.extractLinkInfo(linkElement);
 
     // 处理断开的链接
