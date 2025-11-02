@@ -239,6 +239,10 @@ module.exports = function(eleventyConfig) {
     global.buildWarningCollector.showFinalReport();
   };
   
+  // 定义默认服务器配置
+  const defaultServerPort = process.env.ELEVENTY_PORT || 8080;
+  const defaultServerHost = process.env.ELEVENTY_HOST || 'localhost';
+
   // 设置全局构建上下文用于报告系统
   global.buildContext = {
     isServeMode: isServeMode,
@@ -246,7 +250,7 @@ module.exports = function(eleventyConfig) {
     totalSize: 0,
     assetTypes: {},
     processedAssets: [],
-    serverUrl: isServeMode ? 'http://localhost:8080' : null
+    serverUrl: isServeMode ? `http://${defaultServerHost}:${defaultServerPort}` : null
   };
   
   // 设置全局主题信息
@@ -256,7 +260,7 @@ module.exports = function(eleventyConfig) {
   eleventyConfig.on('eleventy.before', async () => {
     // 重置警告收集器
     global.buildWarningCollector.clear();
-    
+
     try {
       const wikilinkCaches = require('./src/eleventy-plugins/WikilinkPlugin.js');
       if (wikilinkCaches.clearCaches) {
@@ -265,7 +269,7 @@ module.exports = function(eleventyConfig) {
     } catch (e) {
       // 忽略错误
     }
-    
+
     // 预构建资源用于模板渲染
     try {
       const result = await assetBuilder.buildAll();
@@ -1378,44 +1382,35 @@ module.exports = function(eleventyConfig) {
     }
   });
 
-  // serve模式下的特殊处理：等Eleventy输出服务器信息后再显示报告
+  // serve模式下的特殊处理：准备报告数据，等待服务器启动后在 serverOptions.ready 中显示
   if (isServeMode) {
     eleventyConfig.on('eleventy.after', ({ results }) => {
-      // 在serve模式下，延迟一点时间让Eleventy的服务器启动信息先输出
-      setTimeout(() => {
-        // 更新HTML统计信息（使用通用函数）
-        if (results && results.length > 0) {
-          // 保留已有的 aliasStats，只更新 htmlStats
-          const existingAliasStats = global.buildContext.aliasStats;
+      // 更新HTML统计信息（使用通用函数）
+      if (results && results.length > 0) {
+        // 保留已有的 aliasStats，只更新 htmlStats
+        const existingAliasStats = global.buildContext.aliasStats;
 
-          global.buildContext.htmlStats = generateHtmlStats(results, gardenConfig.build || {});
+        global.buildContext.htmlStats = generateHtmlStats(results, gardenConfig.build || {});
 
-          // 恢复 aliasStats（如果有的话）
-          if (existingAliasStats) {
-            global.buildContext.aliasStats = existingAliasStats;
-          }
+        // 恢复 aliasStats（如果有的话）
+        if (existingAliasStats) {
+          global.buildContext.aliasStats = existingAliasStats;
         }
+      }
 
-        // 手动触发WikilinkPlugin的重复检测（确保在报告之前）
-        try {
-          const wikilinkPlugin = require('./src/eleventy-plugins/WikilinkPlugin.js');
-          if (wikilinkPlugin.WikilinkPlugin) {
-            const pluginInstance = new wikilinkPlugin.WikilinkPlugin({ contentDir: inputDir });
-            pluginInstance.performDuplicateCheck();
-          }
-        } catch (error) {
-          // 忽略错误，继续生成报告
+      // 手动触发WikilinkPlugin的重复检测（确保在报告之前）
+      try {
+        const wikilinkPlugin = require('./src/eleventy-plugins/WikilinkPlugin.js');
+        if (wikilinkPlugin.WikilinkPlugin) {
+          const pluginInstance = new wikilinkPlugin.WikilinkPlugin({ contentDir: inputDir });
+          pluginInstance.performDuplicateCheck();
         }
-        
-        // 显示完整的构建报告（传入buildContext和themeInfo，避免隐式依赖global）
-        global.buildWarningCollector.showFinalReport(
-          global.buildContext || {},
-          global.themeInfo || {}
-        );
+      } catch (error) {
+        // 忽略错误，继续生成报告
+      }
 
-        // 清理警告收集器，为下次构建做准备
-        global.buildWarningCollector.clear();
-      }, 500); // 给Eleventy足够时间输出服务器信息
+      // 标记报告待显示，将在 serverOptions.ready 中显示
+      global.buildContext._reportPending = true;
     });
   } else {
     // 构建模式下在构建结束时显示报告
@@ -1489,13 +1484,45 @@ module.exports = function(eleventyConfig) {
 
   return {
     templateFormats: ["md", "njk", "html", "liquid"],
-    markdownTemplateEngine: "njk", 
+    markdownTemplateEngine: "njk",
     htmlTemplateEngine: "njk",
     dir: {
       input: ".",  // 🔍 Eleventy 输入目录：根目录，同时读取 content/ 和 src/_templates/
       output: outputDir,  // 🏗️ 构建输出目录
       includes: "src/_includes",  // 📦 模板片段目录
       layouts: "src/_layouts"     // 🎨 页面布局目录
+    },
+    serverOptions: {
+      port: parseInt(defaultServerPort, 10),  // 使用配置的端口
+      domainName: defaultServerHost,
+      // 服务器启动后的回调，获取实际的服务器地址并显示报告
+      ready: async (devServer) => {
+        if (devServer && devServer.server) {
+          const address = devServer.server.address();
+          if (address) {
+            const actualPort = address.port;
+            const host = address.address;
+            // 将 IPv6 的 :: 和 IPv4 的 0.0.0.0 转换为 localhost
+            const displayHost = (host === '::' || host === '0.0.0.0') ? 'localhost' : host;
+
+            // 更新全局构建上下文中的实际服务器地址
+            if (global.buildContext) {
+              global.buildContext.serverUrl = `http://${displayHost}:${actualPort}`;
+              global.buildContext.actualServerPort = actualPort;
+              global.buildContext.actualServerHost = displayHost;
+            }
+
+            // 在 serve 模式下，服务器启动后显示报告
+            if (isServeMode && global.buildWarningCollector && global.buildContext._reportPending) {
+              global.buildWarningCollector.showFinalReport(
+                global.buildContext || {},
+                global.themeInfo || {}
+              );
+              global.buildContext._reportPending = false;
+            }
+          }
+        }
+      }
     }
   };
 };

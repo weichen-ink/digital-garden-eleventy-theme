@@ -327,14 +327,39 @@ class ServerInfoComponent extends BaseComponent {
 
   render() {
     if (!this.isServeMode) return '';
-    
-    const serverUrl = global.buildContext?.serverUrl || 
-                     process.env.ELEVENTY_SERVER_URL || 
+
+    const serverUrl = global.buildContext?.serverUrl ||
+                     process.env.ELEVENTY_SERVER_URL ||
                      'http://localhost:8080';
-    
-    return `
-${this.createSeparator('🌐 开发服务器信息')}
-${this.formatLine(`🔗 地址: ${serverUrl}`)}`;
+
+    const actualPort = global.buildContext?.actualServerPort;
+    const actualHost = global.buildContext?.actualServerHost;
+    const customPort = process.env.ELEVENTY_PORT;
+    const customHost = process.env.ELEVENTY_HOST;
+
+    let output = `
+${this.createSeparator('🌐 开发服务器信息')}`;
+
+    // 如果已经获取到实际地址，显示实际地址
+    if (actualPort && actualHost) {
+      output += `\n${this.formatLine(`🔗 服务器地址: ${serverUrl}`)}`;
+      // 如果实际端口与配置不同，显示提示
+      const configuredPort = parseInt(customPort || '8080', 10);
+      if (actualPort !== configuredPort) {
+        output += `\n${this.formatLine(`   (端口 ${configuredPort} 被占用，已自动使用 ${actualPort})`)}`;
+      }
+    } else {
+      // 还未获取到实际地址，显示预期地址
+      output += `\n${this.formatLine(`🔗 预期地址: ${serverUrl}`)}`;
+      if (customPort || customHost) {
+        const configs = [];
+        if (customHost) configs.push(`主机: ${customHost}`);
+        if (customPort) configs.push(`端口: ${customPort}`);
+        output += `\n${this.formatLine(`⚙️  配置: ${configs.join(', ')}`)}`;
+      }
+    }
+
+    return output;
   }
 }
 
