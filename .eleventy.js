@@ -402,10 +402,10 @@ module.exports = function(eleventyConfig) {
   
   // 静态文件复制 - 排除需要处理的CSS和JS文件
   eleventyConfig.addPassthroughCopy({
-    "src/assets/images": "src/assets/images",
-    "src/assets/fonts": "src/assets/fonts",
-    "src/assets/favicon": "src/assets/favicon",
-    "src/assets/css/highlight-themes": "src/assets/css/highlight-themes",
+    "src/assets/images": "assets/images",
+    "src/assets/fonts": "assets/fonts",
+    "src/assets/favicon": "assets/favicon",
+    "src/assets/css/highlight-themes": "assets/css/highlight-themes",
     "src/runtime/colors.config.js": "src/runtime/colors.config.js"
   });
   eleventyConfig.addPassthroughCopy("src/admin/");
