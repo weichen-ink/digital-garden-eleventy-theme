@@ -7,11 +7,10 @@
   <meta name="description" content="{{ description | default((garden.site and garden.site.description) | default(site.description)) }}">
   
   <!-- Favicon -->
-  {% set faviconPath = (garden.site and garden.site.faviconPath) | default(site.faviconPath, "/assets/favicon") %}
-  <link rel="icon" href="{{ faviconPath }}/favicon.ico" sizes="any">
-  <link rel="icon" href="{{ faviconPath }}/favicon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="{{ faviconPath }}/apple-touch-icon.png">
-  <link rel="manifest" href="{{ faviconPath }}/site.webmanifest">
+  <link rel="icon" href="/assets/favicon/favicon.ico" sizes="any">
+  <link rel="icon" href="/assets/favicon/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/favicon/apple-touch-icon.png">
+  <link rel="manifest" href="/assets/favicon/site.webmanifest">
   
   <!-- 主要样式文件 -->
   <link rel="stylesheet" href="{{ 'src/assets/css/main.css' | hash }}">

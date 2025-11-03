@@ -55,8 +55,7 @@ module.exports = {
     title: "我的数字花园",           // 网站标题
     description: "知识的花园",       // 网站描述
     author: "你的名字",             // 作者姓名
-    url: "https://yourdomain.com",  // 网站地址
-    faviconPath: "/assets/favicon"  // 网站图标路径（可选）
+    url: "https://yourdomain.com"   // 网站地址
   }
 };
 ```
