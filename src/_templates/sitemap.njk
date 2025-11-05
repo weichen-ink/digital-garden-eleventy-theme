@@ -6,7 +6,8 @@ layout: false
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 {%- for page in collections.content -%}
-{%- if page.url and page.data.title -%}
+{%- if page.url -%}
+{%- set pageTitle = page.data.title or (page.fileSlug and page.fileSlug.split('/') | last) or 'Untitled' -%}
   <url>
     <loc>{{ (garden.site and garden.site.url) | default("https://example.com") }}{{ page.url }}</loc>
     <lastmod>{{ (page.data.updated or page.data.date or page.date) | date("YYYY-MM-DD") }}</lastmod>
