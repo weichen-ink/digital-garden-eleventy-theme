@@ -5,7 +5,4 @@ layout: article-list.njk
 hideSidebar: true
 listType: "folder"
 permalink: /theme-doc/
-share: true
-created: 2025-01-01
-updated: 2025-01-01
 ---

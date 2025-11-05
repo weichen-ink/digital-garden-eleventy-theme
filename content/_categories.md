@@ -5,7 +5,6 @@ eleventyExcludeFromCollections: true
 taxonomyType: categories
 hideSidebar: true
 permalink: /categories/
-share: true
 ---
 
 欢迎来到分类页面！这里汇集了网站中的所有分类，您可以通过点击任何分类来浏览相关的文章内容。

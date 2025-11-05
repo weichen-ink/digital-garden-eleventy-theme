@@ -6,6 +6,5 @@ eleventyExcludeFromCollections: true
 taxonomyType: folders
 hideSidebar: true
 permalink: /folders/
-share: true
 ---
 

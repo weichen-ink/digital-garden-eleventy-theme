@@ -5,7 +5,6 @@ eleventyExcludeFromCollections: true
 taxonomyType: tags
 hideSidebar: true
 permalink: /tags/
-share: true
 ---
 
 欢迎来到标签页面！这里汇集了网站中的所有标签，您可以通过点击任何标签来浏览相关的文章内容。
