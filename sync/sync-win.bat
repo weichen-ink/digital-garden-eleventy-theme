@@ -1,11 +1,15 @@
 @echo off
 chcp 65001 > nul
+setlocal enabledelayedexpansion
 
 REM ============================================================
 REM Obsidian 同步脚本 - Windows 版本
 REM ============================================================
 REM 双击此文件即可运行
-REM 需要安装 Git for Windows
+REM
+REM 依赖项：
+REM   - Git for Windows (包含 bash 和 rsync)
+REM   下载地址: https://git-scm.com/download/win
 REM ============================================================
 
 REM ==================== 配置区域 ====================
@@ -49,6 +53,7 @@ echo.
 REM 检查源文件夹
 if not exist "%OBSIDIAN_PATH%" (
     echo ❌ 错误：源文件夹不存在: %OBSIDIAN_PATH%
+    echo.
     pause
     exit /b 1
 )
@@ -77,35 +82,16 @@ if "%BASH_EXE%"=="" (
     exit /b 1
 )
 
-REM 确认同步
-echo 准备开始同步...
-set /p confirm="确认继续？(Y/n): "
-if /i "%confirm%"=="n" (
-    echo 已取消
-    pause
-    exit /b 0
-)
-
-echo.
-echo 🔄 开始同步...
-echo.
-
-REM 创建目标文件夹
-if not exist "%TARGET_PATH%" mkdir "%TARGET_PATH%"
-
-REM 执行同步（使用 Git Bash）
-"%BASH_EXE%" -c "rsync -av --delete --exclude='.obsidian/' --exclude='.DS_Store' --exclude='*.tmp' --exclude='.git/' '%OBSIDIAN_PATH:\=/%/' '%TARGET_PATH:\=/%/'"
-
+REM 检查git命令
+where git.exe >nul 2>nul
 if %errorlevel% neq 0 (
+    echo ❌ 错误：找不到 git 命令
     echo.
-    echo ❌ 同步失败
+    echo 请确保 Git 已正确安装并添加到 PATH
+    echo.
     pause
     exit /b 1
 )
-
-echo.
-echo ✅ 文件同步完成
-echo.
 
 REM 查找 Git 仓库根目录
 set "TARGET_REPO=%TARGET_PATH%"
@@ -117,49 +103,143 @@ if "%TARGET_REPO:~-1%"==":" goto :not_found
 goto :find_git
 
 :not_found
-echo ❌ 错误：目标路径不在 Git 仓库中
+echo ❌ 错误：目标路径不在 Git 仓库中: %TARGET_PATH%
+echo.
 pause
 exit /b 1
 
 :found_git
-echo 📦 检查 Git 更改...
 cd /d "%TARGET_REPO%"
 
-REM 检查是否有更改（包括未跟踪的文件）
-git status --porcelain > nul 2>&1
-if errorlevel 1 (
-    echo ❌ Git 状态检查失败
+REM 配置 Git 显示中文文件名（仅针对当前仓库）
+git config --local core.quotepath false 2>nul
+
+REM 检查当前分支
+for /f "tokens=*" %%a in ('git branch --show-current') do set "CURRENT_BRANCH=%%a"
+echo 当前 Git 分支: %CURRENT_BRANCH%
+echo.
+
+REM 确认同步
+set /p confirm="准备开始同步，确认继续？(Y/n): "
+if /i "%confirm%"=="n" (
+    echo ✅ 已取消操作
+    echo.
+    pause
+    exit /b 0
+)
+
+echo.
+echo 🔄 开始同步文件...
+echo.
+
+REM 创建目标文件夹
+if not exist "%TARGET_PATH%" mkdir "%TARGET_PATH%"
+
+REM 执行同步（使用 Git Bash，简洁模式避免乱码显示）
+"%BASH_EXE%" -c "rsync -a --delete --stats --human-readable --exclude='.obsidian/' --exclude='.DS_Store' --exclude='*.tmp' --exclude='.git/' --exclude='.gitignore' '%OBSIDIAN_PATH:\=/%/' '%TARGET_PATH:\=/%/'"
+
+if %errorlevel% neq 0 (
+    echo.
+    echo ❌ 文件同步失败
+    echo.
     pause
     exit /b 1
 )
 
+echo.
+echo ✅ 文件同步完成
+echo.
+
+REM 检查 Git 更改
+echo 📦 检查 Git 更改...
+
+REM 检查是否有更改
+git status --porcelain > nul 2>&1
+if errorlevel 1 (
+    echo ❌ Git 状态检查失败
+    echo.
+    pause
+    exit /b 1
+)
+
+set "HAS_CHANGES="
 for /f %%i in ('git status --porcelain') do set HAS_CHANGES=1
 
 if not defined HAS_CHANGES (
-    echo ℹ️  没有检测到更改
+    echo ℹ️  没有检测到更改，同步完成
     echo.
-    echo ✅ 同步完成
     pause
     exit /b 0
 )
 
 echo.
 echo 📝 检测到以下更改：
+echo.
 git status --short
 echo.
 
-REM 提交更改
-for /f "tokens=1-4 delims=/ " %%a in ('date /t') do set "DATE=%%a-%%b-%%c"
-for /f "tokens=1-2 delims=: " %%a in ('time /t') do set "TIME=%%a:%%b:00"
-set "COMMIT_MSG=📝 [Win] 同步笔记: %DATE% %TIME%"
+REM 统计变更文件数
+set "CHANGED_FILES=0"
+for /f %%i in ('git status --porcelain ^| find /c /v ""') do set "CHANGED_FILES=%%i"
+echo 共 %CHANGED_FILES% 个文件发生变化
+echo.
 
-echo 💾 添加并提交更改...
-git add .
-git commit -m "%COMMIT_MSG%"
+REM 提交并推送更改
+echo 💾 准备提交并推送到远程仓库 (分支: %CURRENT_BRANCH%)...
+echo.
+set /p commit_confirm="确认提交并推送这些更改？(Y/n): "
+if /i "%commit_confirm%"=="n" (
+    echo ✅ 已取消，文件已同步到本地
+    echo.
+    pause
+    exit /b 0
+)
 
+REM 检查远程仓库
+git remote -v | findstr "origin" >nul
 if %errorlevel% neq 0 (
+    echo ❌ 未找到远程仓库 origin
+    echo.
+    pause
+    exit /b 1
+)
+
+REM 生成时间戳
+for /f "tokens=1-4 delims=/ " %%a in ('date /t') do (
+    set "DATE=%%a-%%b-%%c"
+)
+for /f "tokens=1-2 delims=: " %%a in ('time /t') do (
+    set "TIME=%%a:%%b:00"
+)
+
+REM 使用临时文件来处理多行commit message
+set "TEMP_MSG_FILE=%TEMP%\commit_msg_%RANDOM%.txt"
+(
+    echo 📝 [Win] 同步笔记: %DATE% %TIME%
+    echo.
+    echo - 同步自: %OBSIDIAN_PATH%
+    echo - 变更文件数: %CHANGED_FILES%
+) > "%TEMP_MSG_FILE%"
+
+REM 提交
+git add -A
+if %errorlevel% neq 0 (
+    del "%TEMP_MSG_FILE%"
+    echo.
+    echo ❌ Git add 失败
+    echo.
+    pause
+    exit /b 1
+)
+
+git commit -F "%TEMP_MSG_FILE%"
+set "COMMIT_RESULT=%errorlevel%"
+del "%TEMP_MSG_FILE%"
+
+if %COMMIT_RESULT% neq 0 (
     echo.
     echo ❌ Git 提交失败
+    echo.
     pause
     exit /b 1
 )
@@ -167,17 +247,8 @@ if %errorlevel% neq 0 (
 echo ✅ 提交成功
 echo.
 
-REM 推送到远程
-echo 🚀 推送到 GitHub...
-set /p push_confirm="确认推送？(Y/n): "
-if /i "%push_confirm%"=="n" (
-    echo 已跳过推送
-    echo.
-    echo ✅ 同步完成（未推送）
-    pause
-    exit /b 0
-)
-
+REM 推送
+echo 🚀 正在推送到远程仓库...
 git push
 
 if %errorlevel% equ 0 (
