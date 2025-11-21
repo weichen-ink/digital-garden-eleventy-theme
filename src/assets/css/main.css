@@ -2053,6 +2053,15 @@ a:hover {
   margin: var(--space-4) 0;
 }
 
+/* 防止iframe溢出（如YouTube等嵌入视频） */
+.note-content iframe {
+  max-width: 100%;
+  border-radius: var(--radius);
+  margin: var(--space-4) 0;
+  aspect-ratio: 16 / 9;
+  height: auto;
+}
+
 .note-content table {
   width: 100%;
   border-collapse: collapse;
