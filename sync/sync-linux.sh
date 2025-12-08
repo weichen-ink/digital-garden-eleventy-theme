@@ -24,7 +24,7 @@ set -e
 OBSIDIAN_PATH="/home/weichen/Documents/obsidian/better-life/_Garden"
 
 # Git 仓库目标文件夹路径（同步到哪里的完整路径）
-TARGET_PATH="/home/weichen/Documents/github/weichen.ink/content"
+TARGET_PATH="/home/weichen/Documents/github/garden.weichen.ink/content"
 
 # ==================== 配置区域结束 ====================
 

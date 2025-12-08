@@ -19,7 +19,7 @@ REM Obsidian 笔记文件夹路径（要同步的源文件夹完整路径）
 set "OBSIDIAN_PATH=C:\Users\weichen\Documents\obsidian\better-life\_Garden"
 
 REM Git 仓库目标文件夹路径（同步到哪里的完整路径）
-set "TARGET_PATH=C:\Users\weichen\Documents\github\weichen.ink\content"
+set "TARGET_PATH=C:\Users\weichen\Documents\github\garden.weichen.ink\content"
 
 REM ==================== 配置区域结束 ====================
 
