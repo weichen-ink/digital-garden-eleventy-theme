@@ -2,6 +2,7 @@
  * 文章排序插件
  * 为文章列表页面提供客户端排序功能
  * 支持按更新时间/发布时间排序，正序/倒序切换
+ * 支持通过 URL 参数指定排序方式：?sort=created|updated&order=asc|desc
  */
 
 class ArticleSortPlugin {
@@ -9,7 +10,8 @@ class ArticleSortPlugin {
     this.currentSort = 'updated'; // 'updated' | 'created'
     this.currentOrder = 'desc';   // 'desc' | 'asc'
     this.storageKey = 'article-sort-preferences';
-    
+    this.urlParamsUsed = false;   // 标记是否使用了URL参数
+
     this.init();
   }
 
@@ -27,14 +29,55 @@ class ArticleSortPlugin {
     const postsList = document.querySelector('.posts-list');
     if (!postsList) return;
 
-    // 加载保存的排序偏好
-    this.loadPreferences();
-    
+    // 优先级: URL参数 > localStorage
+    // 先尝试从URL参数加载
+    const urlParamsLoaded = this.loadFromUrlParams();
+
+    // 如果没有URL参数，则从localStorage加载
+    if (!urlParamsLoaded) {
+      this.loadPreferences();
+    }
+
     // 初始化UI
     this.initSortControls();
-    
+
     // 应用当前排序
     this.applySorting();
+  }
+
+  /**
+   * 从URL参数加载排序设置
+   * 支持的参数: sort=created|updated, order=asc|desc
+   * @returns {boolean} 是否成功从URL加载了参数
+   */
+  loadFromUrlParams() {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      let hasValidParams = false;
+
+      // 解析 sort 参数
+      const sortParam = urlParams.get('sort');
+      if (sortParam && ['created', 'updated'].includes(sortParam)) {
+        this.currentSort = sortParam;
+        hasValidParams = true;
+      }
+
+      // 解析 order 参数
+      const orderParam = urlParams.get('order');
+      if (orderParam && ['asc', 'desc'].includes(orderParam)) {
+        this.currentOrder = orderParam;
+        hasValidParams = true;
+      }
+
+      if (hasValidParams) {
+        this.urlParamsUsed = true;
+      }
+
+      return hasValidParams;
+    } catch (error) {
+      console.warn('无法解析URL参数:', error);
+      return false;
+    }
   }
 
   initSortControls() {
@@ -57,7 +100,7 @@ class ArticleSortPlugin {
           this.currentSort = sortType;
           hasChanged = true;
         }
-        
+
         if (sortOrder && sortOrder !== this.currentOrder) {
           this.currentOrder = sortOrder;
           hasChanged = true;
@@ -74,18 +117,18 @@ class ArticleSortPlugin {
 
   updateUIState() {
     const sortButtons = document.querySelectorAll('.sort-btn');
-    
+
     sortButtons.forEach(button => {
       let isActive = false;
-      
+
       if (button.dataset.sort) {
         isActive = button.dataset.sort === this.currentSort;
       }
-      
+
       if (button.dataset.order) {
         isActive = button.dataset.order === this.currentOrder;
       }
-      
+
       button.classList.toggle('active', isActive);
     });
   }
@@ -95,14 +138,14 @@ class ArticleSortPlugin {
     if (!postsList) return;
 
     const postItems = Array.from(postsList.querySelectorAll('.post-item'));
-    
+
     // 对文章项进行排序
     postItems.sort((a, b) => {
       const dateA = this.getDateForSorting(a);
       const dateB = this.getDateForSorting(b);
-      
+
       if (!dateA || !dateB) return 0;
-      
+
       const comparison = new Date(dateA) - new Date(dateB);
       return this.currentOrder === 'desc' ? -comparison : comparison;
     });
@@ -127,18 +170,18 @@ class ArticleSortPlugin {
 
   updateDisplayedDates() {
     const postItems = document.querySelectorAll('.post-item');
-    
+
     postItems.forEach(item => {
       const dateElement = item.querySelector('.post-date');
       if (!dateElement) return;
-      
+
       let dateValue;
       if (this.currentSort === 'updated') {
         dateValue = item.dataset.updated;
       } else {
         dateValue = item.dataset.created;
       }
-      
+
       if (dateValue) {
         // 格式化日期显示
         const formattedDate = this.formatDate(dateValue);
