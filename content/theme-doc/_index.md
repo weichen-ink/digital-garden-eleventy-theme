@@ -5,4 +5,6 @@ layout: article-list.njk
 hideSidebar: true
 listType: "folder"
 permalink: /theme-doc/
+updated: 2024-12-10
+created: 2024-12-09
 ---
